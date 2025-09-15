@@ -1,41 +1,45 @@
 import streamlit as st
+import math
 
 st.set_page_config(page_title="Fiber Techno-Economic Analysis", layout="wide")
 
 st.title("Techno-Economic Fiber Production Analysis")
 
-# --- Sidebar Section Navigation ---
-section = st.sidebar.selectbox(
-    "Choose a Section",
-    [
-        "Production Capacity",
-        "Solution Preparation",
-        "Extruder",
-        "Spinning",
-        "Stretching & Solvent Removal",
-        "Drying",
-        "Raw Materials",
-        "Fiber Property",
-        "Economic Summary"
-    ]
-)
+# Use compact navigation with radio buttons
+sections = [
+    "Production Capacity", "Solution Preparation", "Extruder", "Spinning",
+    "Stretching & Solvent Removal", "Drying", "Raw Materials", 
+    "Fiber Property", "Economic Summary"
+]
+
+# Create a compact navigation
+selected_section = st.radio("Navigate to Section:", sections, horizontal=True)
+
+st.markdown("---")
+
+# Add a schematic image (replace with your actual image path)
+st.image("https://via.placeholder.com/800x300?text=Fiber+Production+Process+Schematic", 
+         use_column_width=True, caption="Fiber Production Process Schematic")
+
+st.markdown("---")
 
 # ---- Section: Production Capacity ----
-if section == "Production Capacity":
+if selected_section == "Production Capacity":
     st.header("Production Capacity")
 
-    # Inputs (editable)
-    annual_production_ton = st.number_input("Annual Production (tons/year)", min_value=1, value=250)
-    operational_days = st.number_input("Operational Days per Year", min_value=1, max_value=366, value=300)
-    dpf = st.number_input("Filament Linear Density (dpf)", min_value=0.01, value=3.1)
-    take_up_speed = st.number_input("Take-up Speed (m/min)", min_value=1, value=100)
-    spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50)
-    holes_per_spinneret = st.number_input("Holes Per Spinneret", min_value=1, value=360)
+    col1, col2 = st.columns(2)
+    with col1:
+        annual_production_ton = st.number_input("Annual Production (tons/year)", min_value=1, value=250)
+        operational_days = st.number_input("Operational Days per Year", min_value=1, max_value=366, value=300)
+        dpf = st.number_input("Filament Linear Density (dpf)", min_value=0.01, value=3.1)
+    with col2:
+        take_up_speed = st.number_input("Take-up Speed (m/min)", min_value=1, value=100)
+        spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50)
+        holes_per_spinneret = st.number_input("Holes Per Spinneret", min_value=1, value=360)
 
     # Calculations
     operational_minutes = operational_days * 24 * 60
-    annual_production_kg = annual_production_ton * 1000
-    annual_production_g = annual_production_kg * 1000
+    annual_production_g = annual_production_ton * 1000 * 1000
     g_per_min = annual_production_g / operational_minutes
     g_per_m = dpf / 9000
     filament_m_per_min = g_per_min / g_per_m
@@ -45,235 +49,221 @@ if section == "Production Capacity":
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Dry Fiber Output (g/min)", round(g_per_min, 2))
-        st.metric("Filament Linear Density (g/m)", g_per_m)
-        st.metric("Filament Linear Density (dpf)", dpf)
-        st.metric("Operational Time (min/year)", operational_minutes)
-    with col2:
+        st.metric("Filament Linear Density (g/m)", round(g_per_m, 6))
         st.metric("Total Filament Output (m/min)", int(filament_m_per_min))
-        st.metric("Take-up Speed (m/min)", take_up_speed)
+    with col2:
         st.metric("Filaments Needed", int(n_filaments_needed))
         st.metric("Design Filaments (Spinneret Holes)", n_spinneret_holes)
-
-    st.info(
-        f"**Design Used:** {spinnerets} spinnerets × {holes_per_spinneret} holes = "
-        f"{n_spinneret_holes:,} filaments (compare to {int(n_filaments_needed):,} minimum needed)\n"
-        "To reach higher annual output, run additional production trains in parallel."
-    )
-
-    st.caption("Change any parameter above to see live updates.")
+        st.metric("Utilization (%)", round((n_filaments_needed / n_spinneret_holes) * 100, 1))
 
 # ---- Section: Solution Preparation ----
-elif section == "Solution Preparation":
+elif selected_section == "Solution Preparation":
     st.header("Solution Preparation")
     
-    # Polymer Solution Preparation code block
-    polymer_wt_frac = st.number_input("Polymer Weight Fraction in Solution (g/g)", min_value=0.001, max_value=1.0, value=0.1, step=0.01)
-    dry_fiber_g_per_min = st.number_input("Dry Fiber Output (g/min)", min_value=1.0, value=5787.04, step=1.0)
-    solution_density = st.number_input("Polymer Solution Density (g/cc)", min_value=0.5, max_value=2.0, value=0.9, step=0.01)
-    spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50, step=1)
-    holes_per_spinneret = st.number_input("Holes Per Spinneret", min_value=1, value=360, step=1)
+    col1, col2 = st.columns(2)
+    with col1:
+        polymer_wt_frac = st.number_input("Polymer Weight Fraction", min_value=0.001, max_value=1.0, value=0.1, step=0.01)
+        dry_fiber_g_per_min = st.number_input("Dry Fiber Output (g/min)", min_value=1.0, value=5787.04, step=1.0)
+    with col2:
+        solution_density = st.number_input("Solution Density (g/cc)", min_value=0.5, max_value=2.0, value=0.9, step=0.01)
+        total_holes = st.number_input("Total Spinneret Holes", min_value=1, value=18000, step=1)
 
     solution_g_per_min = dry_fiber_g_per_min / polymer_wt_frac
     solution_cc_per_min = solution_g_per_min / solution_density
-    total_holes = spinnerets * holes_per_spinneret
     solution_cc_per_min_per_hole = solution_cc_per_min / total_holes
     solution_g_per_min_per_hole = solution_g_per_min / total_holes
 
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Solution polymer flow (g/min)", round(solution_g_per_min, 2))
-        st.metric("Solution flow rate (cc/min)", round(solution_cc_per_min, 2))
+        st.metric("Solution Flow (g/min)", round(solution_g_per_min, 2))
+        st.metric("Solution Flow (cc/min)", round(solution_cc_per_min, 2))
     with col2:
-        st.metric("Solution flow per hole (cc/min/hole)", round(solution_cc_per_min_per_hole, 4))
-        st.metric("Solution flow per hole (g/min/hole)", round(solution_g_per_min_per_hole, 4))
+        st.metric("Flow per Hole (cc/min)", round(solution_cc_per_min_per_hole, 4))
+        st.metric("Flow per Hole (g/min)", round(solution_g_per_min_per_hole, 4))
 
-    st.caption(
-        f"These values are based on a polymer weight fraction of {polymer_wt_frac}, a solution density of {solution_density} g/cc, and a total of {total_holes} spinning holes."
-    )
 # ---- Section: Extruder ----
-elif section == "Extruder":
-    st.header("Extruder")
-    st.write("Section under construction. Add your calculation logic and inputs here!")
+elif selected_section == "Extruder":
+    st.header("Extruder Parameters")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        screw_diameter = st.number_input("Screw Diameter (mm)", min_value=10, value=60, step=5)
+        l_d_ratio = st.number_input("L/D Ratio", min_value=10, value=40, step=1)
+        motor_power = st.number_input("Motor Power (kW)", min_value=1, value=200, step=10)
+    with col2:
+        max_rpm = st.number_input("Maximum RPM", min_value=10, value=300, step=10)
+        throughput = st.number_input("Throughput (kg/h)", min_value=1, value=500, step=10)
+        specific_energy = st.number_input("Specific Energy (kWh/kg)", min_value=0.1, value=0.15, step=0.01)
+    
+    st.metric("Screw Length (mm)", screw_diameter * l_d_ratio)
+    st.metric("Energy Consumption (kW)", round(throughput * specific_energy, 1))
 
 # ---- Section: Spinning ----
-elif section == "Spinning":
+elif selected_section == "Spinning":
     st.header("Spinning Calculations")
 
-    import math
+    col1, col2 = st.columns(2)
+    with col1:
+        spinneret_hole_diameter = st.number_input("Hole Diameter (mm)", min_value=0.01, value=0.3, step=0.01)
+        total_holes = st.number_input("Total Holes", min_value=1, value=18000, step=1)
+        solution_cc_per_min = st.number_input("Solution Flow Rate (cc/min)", min_value=0.01, value=6430.04, step=0.01)
+    with col2:
+        take_up_speed = st.number_input("Take-up Speed (m/min)", min_value=0.01, value=100.0, step=1.0)
+        spinnerets_per_battery = st.number_input("Spinnerets per Battery", min_value=1, value=10, step=1)
+        filaments_per_yarn = st.number_input("Filaments per Yarn", min_value=1, value=720, step=1)
 
-    # --- Core Spinning Inputs ---
-    spinneret_hole_diameter_cm = st.number_input("Spinneret Hole Diameter (cm)", min_value=0.001, value=0.03, step=0.001)
-    holes_per_spinneret = st.number_input("Holes per Spinneret", min_value=1, value=360, step=1)
-    spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50, step=1)
-    solution_cc_per_min = st.number_input("Total Solution Flow Rate (cc/min)", min_value=0.01, value=6430.04, step=0.01)
-    take_up_speed = st.number_input("Take-up Speed (m/min)", min_value=0.01, value=100.0, step=1.0)
-
-    # --- Battery/Yarn Inputs ---
-    spinnerets_per_battery = st.number_input("Spinnerets per Battery", min_value=1, value=10, step=1)
-    filaments_per_yarn = st.number_input("Filaments per Yarn", min_value=1, value=720, step=1)
-
-    # --- Calculations ---
-    spinneret_hole_radius_cm = spinneret_hole_diameter_cm / 2
+    # Calculations
+    spinneret_hole_radius_cm = spinneret_hole_diameter / 20  # mm to cm, then radius
     hole_cross_section_cm2 = math.pi * spinneret_hole_radius_cm ** 2
-    total_holes = spinnerets * holes_per_spinneret
-
-    # Battery/group calculations
-    num_batteries = math.ceil(spinnerets / spinnerets_per_battery)
-    battery_flow_cc_per_min = solution_cc_per_min / num_batteries if num_batteries else 0  # cc/min per battery
-
-    # Per spinneret, per yarn
-    filaments_per_spinneret = holes_per_spinneret
-    spinnerets_per_yarn = filaments_per_yarn // filaments_per_spinneret if filaments_per_spinneret else 0
-
-    # Volumetric flow per hole and spinneret
-    vol_flow_per_hole_cc_min = solution_cc_per_min / total_holes if total_holes else 0
-    vol_flow_per_spinneret_cc_min = solution_cc_per_min / spinnerets if spinnerets else 0
-
-    # Velocity leaving spinneret (m/min)
+    vol_flow_per_hole_cc_min = solution_cc_per_min / total_holes
     hole_cross_section_m2 = hole_cross_section_cm2 * 1e-4
     vol_flow_per_hole_m3_min = vol_flow_per_hole_cc_min * 1e-6
     vel_leaving_spinneret_m_min = vol_flow_per_hole_m3_min / hole_cross_section_m2 if hole_cross_section_m2 else 0
-
-    # Draw ratio and fiber at TU
     solution_draw_ratio = take_up_speed / vel_leaving_spinneret_m_min if vel_leaving_spinneret_m_min else 0
-    fiber_cross_section_cm2_TU = hole_cross_section_cm2 / solution_draw_ratio if solution_draw_ratio else 0
-    fiber_diameter_cm = math.sqrt(fiber_cross_section_cm2_TU * 4 / math.pi) if fiber_cross_section_cm2_TU else 0
-    fiber_diameter_um = fiber_diameter_cm * 10000
+    
+    num_batteries = math.ceil(total_holes / (spinnerets_per_battery * (total_holes / st.session_state.get('holes_per_spinneret', 360))) if 'holes_per_spinneret' in st.session_state else 1
+    battery_flow_cc_per_min = solution_cc_per_min / num_batteries if num_batteries else 0
 
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Total Holes", total_holes)
         st.metric("Hole Cross Section (cm²)", round(hole_cross_section_cm2, 6))
-        st.metric("Volumetric Flow per Hole (cc/min)", round(vol_flow_per_hole_cc_min, 6))
-        st.metric("Volumetric Flow per Spinneret (cc/min)", round(vol_flow_per_spinneret_cc_min, 3))
+        st.metric("Velocity at Spinneret (m/min)", round(vel_leaving_spinneret_m_min, 3))
+        st.metric("Solution Draw Ratio", round(solution_draw_ratio, 3))
+    with col2:
         st.metric("Num. Batteries Needed", num_batteries)
         st.metric("Battery Flow Rate (L/min)", round(battery_flow_cc_per_min/1000, 2))
-    with col2:
-        st.metric("Velocity Leaving Spinneret (m/min)", round(vel_leaving_spinneret_m_min, 3))
-        st.metric("Solution Draw Ratio", round(solution_draw_ratio, 3))
-        st.metric("Fiber Cross Section at TU (cm²)", round(fiber_cross_section_cm2_TU, 6))
-        st.metric("Fiber Diameter at TU (μm, no shrinkage)", round(fiber_diameter_um, 4))
-        st.metric("Spinneret/Yarn", spinnerets_per_yarn)
         st.metric("Filaments per Yarn", filaments_per_yarn)
 
-    st.caption(
-        f"{num_batteries} batteries, each feeding {spinnerets_per_battery} spinnerets ({battery_flow_cc_per_min/1000:.2f} L/min per battery). "
-        f"For {filaments_per_yarn} filaments/yarn, you need {spinnerets_per_yarn} spinnerets per yarn."
-    )
+# ---- Section: Stretching & Solvent Removal ----
+elif selected_section == "Stretching & Solvent Removal":
+    st.header("Stretching & Solvent Removal")
 
-
-# ---- Section: Stretching ----
-elif section == "Stretching & Solvent Removal":
-    st.header("Stretching from As-Spun Fiber (ASF) to Final Filament & Solvent Removal")
-
-    import math
-
-    # --- User Inputs ---
-    draw_ratio = st.number_input("Draw Ratio (ASF → Final)", min_value=0.1, value=9.33, step=0.01)
-    asf_g_per_min = st.number_input("ASF Dry Fiber Output (g/min)", min_value=0.01, value=643.0, step=1.0)
-    solvent_removed_g_per_min = st.number_input("Solvent Removed (g/min)", min_value=1.0, value=5208.33, step=1.0)
-    fiber_ac_final_cm2 = st.number_input("Fiber Cross-section (Shrunk, cm²)", min_value=1e-7, value=3.82915E-06, format="%.8e")
-    fiber_ac_asf_cm2 = st.number_input("Fiber ASF Cross-section (K20, cm²)", min_value=1e-7, value=3.57418E-05, format="%.8e")
-    vel_tu_shrunk_m_min = st.number_input("Take-Up Speed (Shrunk, m/min)", min_value=0.1, value=150.0, step=1.0)
-    mw_hexane = st.number_input("MW Hexane (g/mol)", min_value=1.0, value=86.0)
-    solvent_conc_exit = st.number_input("Solvent Conc. at Exit (wt%, as fraction)", min_value=0.0, max_value=1.0, value=0.20, step=0.01)
-    hexane_sp_heat_kj_kgC = st.number_input("Specific Heat (Hexane, kJ/kg·C)", min_value=0.1, value=2.26, step=0.01)
-    hexane_ht_vap_kj_kg = st.number_input("Heat of Vaporization (Hexane, kJ/kg)", min_value=1.0, value=370.0, step=1.0)
-    delta_T = st.number_input("ΔT to Boiling Point (C)", min_value=0.1, value=50.0, step=1.0)
-    operational_hours = st.number_input("Annual Operation (hours)", min_value=1.0, value=7200.0, step=1.0)  # ~300d x 24h
-    electrical_efficiency = st.number_input("Electrical Efficiency", min_value=0.01, max_value=1.0, value=0.7, step=0.01)
-    electricity_cost_usd_per_kwh = st.number_input("Electricity Cost ($/kWhr)", min_value=0.01, value=0.15, step=0.01)
-
-    # --- Calculations ---
-    # Remaining polymer, cc/min (assuming density ~1cc/g for estimation)
-    remaining_polymer_cc_min = asf_g_per_min  # as 1g ≈ 1cc for estimation
-
-    # Vol. flow per filament after solvent removal (cc/min/fil) - user can adjust as needed
-    vol_flow_per_filament_cc_min = st.number_input("Volumetric Flow per Filament (cc/min)", min_value=1e-4, value=0.3215, step=0.001)
-
-    # Velocity ratio during shrinkage
-    vel_tu_shrunk_cm_min = vel_tu_shrunk_m_min * 100
-    vel_ratio_during_shrink = vel_tu_shrunk_cm_min / (vel_tu_shrunk_m_min if vel_tu_shrunk_m_min else 1)
-
-    # Hexane calculations
-    hexane_required_kg_min = st.number_input("Hexane Required (kg/min)", min_value=0.01, value=26.04167, step=0.01)
-    hexane_required_kg_hr = hexane_required_kg_min * 60
-    power_hexane_evap_kj_hr = (hexane_required_kg_hr * (hexane_sp_heat_kj_kgC * delta_T + hexane_ht_vap_kj_kg))
-    power_hexane_evap_kw = power_hexane_evap_kj_hr / 3600
-    annual_hexane_evap_kwh = power_hexane_evap_kw * operational_hours / electrical_efficiency
-    annual_solvent_heat_cost = annual_hexane_evap_kwh * electricity_cost_usd_per_kwh
-
-    # --- Display ---
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Draw Ratio (ASF → Final)", draw_ratio)
-        st.metric("Solvent Removed (g/min)", solvent_removed_g_per_min)
-        st.metric("Remaining Polymer (cc/min)", remaining_polymer_cc_min)
-        st.metric("Velocity Ratio During Shrinkage", round(vel_ratio_during_shrink, 3))
-        st.metric("Cross-section Shrunk Fiber (cm²)", fiber_ac_final_cm2)
-        st.metric("Cross-section ASF Fiber (cm²)", fiber_ac_asf_cm2)
+        draw_ratio = st.number_input("Draw Ratio (ASF → Final)", min_value=0.1, value=9.33, step=0.01)
+        asf_g_per_min = st.number_input("ASF Output (g/min)", min_value=0.01, value=643.0, step=1.0)
+        solvent_removed_g_per_min = st.number_input("Solvent Removed (g/min)", min_value=1.0, value=5208.33, step=1.0)
     with col2:
-        st.metric("Hexane Required (kg/min)", hexane_required_kg_min)
-        st.metric("Annual Evap. Power (kWh)", round(annual_hexane_evap_kwh, 1))
-        st.metric("Annual Solvent Heat Cost ($)", round(annual_solvent_heat_cost, 2))
-        st.metric("Electrical Efficiency", electrical_efficiency)
-        st.metric("Electricity Cost ($/kWh)", electricity_cost_usd_per_kwh)
+        vel_tu_shrunk = st.number_input("Take-Up Speed (m/min)", min_value=0.1, value=150.0, step=1.0)
+        solvent_conc_exit = st.number_input("Solvent Conc. at Exit (%)", min_value=0.0, max_value=100.0, value=20.0, step=1.0)
+        electricity_cost = st.number_input("Electricity Cost ($/kWh)", min_value=0.01, value=0.15, step=0.01)
 
-    st.caption(
-        "Shrinkage, draw ratio, solvent removal, and hexane evaporation power/cost calculations "
-        "support post-spinning processing and economics."
-    )
+    hexane_required_kg_min = solvent_removed_g_per_min / 1000
+    hexane_required_kg_hr = hexane_required_kg_min * 60
+    power_hexane_evap_kw = hexane_required_kg_hr * 0.5  # Simplified calculation
+    annual_solvent_heat_cost = power_hexane_evap_kw * 7200 * electricity_cost  # 7200 operational hours
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Draw Ratio", draw_ratio)
+        st.metric("Solvent Removed (kg/min)", round(hexane_required_kg_min, 2))
+        st.metric("Hexane Required (kg/hr)", round(hexane_required_kg_hr, 2))
+    with col2:
+        st.metric("Evaporation Power (kW)", round(power_hexane_evap_kw, 1))
+        st.metric("Annual Solvent Heat Cost ($)", round(annual_solvent_heat_cost, 0))
+
+# ---- Section: Drying ----
+elif selected_section == "Drying":
+    st.header("Drying Parameters")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        drying_temperature = st.number_input("Drying Temperature (°C)", min_value=20, value=120, step=5)
+        residence_time = st.number_input("Residence Time (min)", min_value=0.1, value=5.0, step=0.5)
+        air_flow_rate = st.number_input("Air Flow Rate (m³/min)", min_value=1, value=100, step=10)
+    with col2:
+        initial_moisture = st.number_input("Initial Moisture (%)", min_value=0.0, value=20.0, step=1.0)
+        final_moisture = st.number_input("Final Moisture (%)", min_value=0.0, value=1.0, step=0.1)
+        energy_consumption = st.number_input("Energy Consumption (kWh/kg water)", min_value=0.1, value=1.2, step=0.1)
+    
+    water_removed = (initial_moisture - final_moisture) / 100 * st.session_state.get('dry_fiber_g_per_min', 5787.04) / 1000 if 'dry_fiber_g_per_min' in st.session_state else 0
+    drying_energy = water_removed * energy_consumption
+    
+    st.metric("Water Removed (kg/h)", round(water_removed * 60, 2))
+    st.metric("Drying Energy (kW)", round(drying_energy, 2))
 
 # ---- Section: Raw Materials ----
-elif section == "Raw Materials":
+elif selected_section == "Raw Materials":
     st.header("Raw Materials Usage & Cost")
-    uhmppe_use_ton = st.number_input("UHMPE Usage (T/yr)", min_value=1.0, value=250.0)
-    solv_makeup_ton = st.number_input("Makeup Solvent (T/yr)", min_value=0.0, value=67.5)
-    additives_kg_yr = st.number_input("Additives (kg/yr)", min_value=0.0, value=2500.0)
-    uhmppe_cost_per_kg = st.number_input("UHMPE Cost ($/kg)", min_value=0.1, value=2.0)
-    solvent_cost_per_kg = st.number_input("Solvent Cost ($/kg)", min_value=0.1, value=2.0)
-    additive_cost_per_kg = st.number_input("Additive Cost ($/kg)", min_value=0.1, value=20.0)
-    # ...Calculate total annual cost for each (usage × $/kg)
-
-# ---- Section: Fiber Property ----
-elif section == "Fiber Property":
-    st.header("Fiber Property Calculations")
-
-    # Editable Inputs
-    filament_diameter_um = st.number_input("Filament Diameter (μm)", min_value=1.0, value=22.08, step=0.01)
-    filament_density = st.number_input("Density of PE (g/cc)", min_value=0.1, value=0.9, step=0.01)
-    dpf = st.number_input("Denier Per Filament (dpf)", min_value=0.01, value=3.1, step=0.01)
-
-    # Calculations
-    filament_diameter_cm = filament_diameter_um / 10000  # μm → cm
-    filament_crosssection_cm2 = 3.1416 * (filament_diameter_cm/2)**2  # A = πr^2
-
-    # Filament g/1m: volume per length (cm^2 × 100 cm = cm^3) × density
-    filament_g_per_m = filament_crosssection_cm2 * 100 * filament_density  # g/m
-
-    # Cross-check with dpf:
-    # 1 dpf = 1 g / 9000 m; dpf for this filament: filament_g_per_m * 9000
-    calculated_dpf = filament_g_per_m * 9000
-
+    
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Filament Diameter (μm)", filament_diameter_um)
-        st.metric("Filament Cross-section (cm²)", filament_crosssection_cm2)
-        st.metric("Filament Linear Density (g/m)", filament_g_per_m)
+        uhmwpe_use_ton = st.number_input("UHMWPE Usage (T/yr)", min_value=1.0, value=250.0)
+        solvent_makeup_ton = st.number_input("Makeup Solvent (T/yr)", min_value=0.0, value=67.5)
+        additives_kg_yr = st.number_input("Additives (kg/yr)", min_value=0.0, value=2500.0)
     with col2:
-        st.metric("Cross-check dpf from g/m", calculated_dpf)
-        st.metric("Input Denier Per Filament", dpf)
+        uhmwpe_cost = st.number_input("UHMWPE Cost ($/kg)", min_value=0.1, value=2.0)
+        solvent_cost = st.number_input("Solvent Cost ($/kg)", min_value=0.1, value=2.0)
+        additive_cost = st.number_input("Additive Cost ($/kg)", min_value=0.1, value=20.0)
+    
+    material_costs = (
+        (uhmwpe_use_ton * 1000 * uhmwpe_cost) +
+        (solvent_makeup_ton * 1000 * solvent_cost) +
+        (additives_kg_yr * additive_cost / 1000)
+    )
+    
+    st.metric("Total Material Cost ($/yr)", round(material_costs, 2))
+    st.metric("Material Cost per kg Fiber ($/kg)", round(material_costs / (uhmwpe_use_ton * 1000), 2))
 
-    st.caption(
-        "Calculation uses filament diameter to compute cross-sectional area and linear density, "
-        "and cross-checks measured dpf (g/9000m) against calculated value from geometry and density.")
-
+# ---- Section: Fiber Property ----
+elif selected_section == "Fiber Property":
+    st.header("Fiber Property Calculations")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        filament_diameter = st.number_input("Filament Diameter (μm)", min_value=1.0, value=22.08, step=0.01)
+        filament_density = st.number_input("Density (g/cc)", min_value=0.1, value=0.9, step=0.01)
+    with col2:
+        dpf = st.number_input("Denier Per Filament (dpf)", min_value=0.01, value=3.1, step=0.01)
+        tenacity = st.number_input("Tenacity (g/denier)", min_value=0.1, value=35.0, step=0.1)
+    
+    filament_diameter_cm = filament_diameter / 10000
+    filament_crosssection = 3.1416 * (filament_diameter_cm/2)**2
+    filament_g_per_m = filament_crosssection * 100 * filament_density
+    calculated_dpf = filament_g_per_m * 9000
+    tensile_strength = tenacity * dpf * 0.0882  # Convert to N/tex
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Filament Cross-section (cm²)", round(filament_crosssection, 8))
+        st.metric("Calculated Linear Density (g/m)", round(filament_g_per_m, 6))
+    with col2:
+        st.metric("Calculated dpf", round(calculated_dpf, 2))
+        st.metric("Tensile Strength (N/tex)", round(tensile_strength, 1))
 
 # ---- Section: Economic Summary ----
-elif section == "Economic Summary":
+elif selected_section == "Economic Summary":
     st.header("Profitability & Cost Summary")
-    capex_total = st.number_input("Total Capex ($)", min_value=1.0, value=915000.0)
-    capex_charge = capex_total * 0.25
-    # ...Display/metric for capex, process, sales, margin/kg, etc.
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        capex_total = st.number_input("Total Capex ($)", min_value=1.0, value=915000.0)
+        opex_per_year = st.number_input("Annual Opex ($)", min_value=1.0, value=350000.0)
+        material_cost_per_kg = st.number_input("Material Cost ($/kg)", min_value=0.01, value=2.5, step=0.1)
+    with col2:
+        fiber_price = st.number_input("Fiber Selling Price ($/kg)", min_value=0.01, value=15.0, step=0.1)
+        annual_production = st.number_input("Annual Production (tons)", min_value=1.0, value=250.0)
+        depreciation_years = st.number_input("Depreciation Period (years)", min_value=1, value=10)
+    with col3:
+        labor_cost = st.number_input("Labor Cost ($/yr)", min_value=0.0, value=200000.0)
+        utility_cost = st.number_input("Utility Cost ($/yr)", min_value=0.0, value=50000.0)
+        other_costs = st.number_input("Other Costs ($/yr)", min_value=0.0, value=50000.0)
+    
+    annual_revenue = annual_production * 1000 * fiber_price
+    total_annual_costs = (annual_production * 1000 * material_cost_per_kg) + opex_per_year + labor_cost + utility_cost + other_costs
+    annual_profit = annual_revenue - total_annual_costs
+    capex_annual = capex_total / depreciation_years
+    roi = annual_profit / capex_total * 100 if capex_total else 0
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Annual Revenue ($)", round(annual_revenue, 2))
+        st.metric("Annual Costs ($)", round(total_annual_costs, 2))
+        st.metric("Annual Profit ($)", round(annual_profit, 2))
+    with col2:
+        st.metric("ROI (%)", round(roi, 1))
+        st.metric("Payback Period (years)", round(capex_total / annual_profit, 1) if annual_profit > 0 else float('inf'))
+        st.metric("Break-even Price ($/kg)", round(total_annual_costs / (annual_production * 1000), 2))
 
-# ---------- END ----------
+st.markdown("---")
+st.caption("Fiber Production Techno-Economic Analysis Tool v1.0")
