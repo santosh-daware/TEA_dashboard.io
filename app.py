@@ -97,8 +97,70 @@ elif section == "Extruder":
 
 # ---- Section: Spinning ----
 elif section == "Spinning":
-    st.header("Spinning")
-    st.write("Section under construction. Add your calculation logic and inputs here!")
+    st.header("Spinning Calculations")
+
+    import math
+
+    # --- Core Spinning Inputs ---
+    spinneret_hole_diameter_cm = st.number_input("Spinneret Hole Diameter (cm)", min_value=0.001, value=0.03, step=0.001)
+    holes_per_spinneret = st.number_input("Holes per Spinneret", min_value=1, value=360, step=1)
+    spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50, step=1)
+    solution_cc_per_min = st.number_input("Total Solution Flow Rate (cc/min)", min_value=0.01, value=6430.04, step=0.01)
+    take_up_speed = st.number_input("Take-up Speed (m/min)", min_value=0.01, value=100.0, step=1.0)
+
+    # --- Battery/Yarn Inputs ---
+    spinnerets_per_battery = st.number_input("Spinnerets per Battery", min_value=1, value=10, step=1)
+    filaments_per_yarn = st.number_input("Filaments per Yarn", min_value=1, value=720, step=1)
+
+    # --- Calculations ---
+    spinneret_hole_radius_cm = spinneret_hole_diameter_cm / 2
+    hole_cross_section_cm2 = math.pi * spinneret_hole_radius_cm ** 2
+    total_holes = spinnerets * holes_per_spinneret
+
+    # Battery/group calculations
+    num_batteries = math.ceil(spinnerets / spinnerets_per_battery)
+    battery_flow_cc_per_min = solution_cc_per_min / num_batteries if num_batteries else 0  # cc/min per battery
+
+    # Per spinneret, per yarn
+    filaments_per_spinneret = holes_per_spinneret
+    spinnerets_per_yarn = filaments_per_yarn // filaments_per_spinneret if filaments_per_spinneret else 0
+
+    # Volumetric flow per hole and spinneret
+    vol_flow_per_hole_cc_min = solution_cc_per_min / total_holes if total_holes else 0
+    vol_flow_per_spinneret_cc_min = solution_cc_per_min / spinnerets if spinnerets else 0
+
+    # Velocity leaving spinneret (m/min)
+    hole_cross_section_m2 = hole_cross_section_cm2 * 1e-4
+    vol_flow_per_hole_m3_min = vol_flow_per_hole_cc_min * 1e-6
+    vel_leaving_spinneret_m_min = vol_flow_per_hole_m3_min / hole_cross_section_m2 if hole_cross_section_m2 else 0
+
+    # Draw ratio and fiber at TU
+    solution_draw_ratio = take_up_speed / vel_leaving_spinneret_m_min if vel_leaving_spinneret_m_min else 0
+    fiber_cross_section_cm2_TU = hole_cross_section_cm2 / solution_draw_ratio if solution_draw_ratio else 0
+    fiber_diameter_cm = math.sqrt(fiber_cross_section_cm2_TU * 4 / math.pi) if fiber_cross_section_cm2_TU else 0
+    fiber_diameter_um = fiber_diameter_cm * 10000
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Holes", total_holes)
+        st.metric("Hole Cross Section (cm²)", round(hole_cross_section_cm2, 6))
+        st.metric("Volumetric Flow per Hole (cc/min)", round(vol_flow_per_hole_cc_min, 6))
+        st.metric("Volumetric Flow per Spinneret (cc/min)", round(vol_flow_per_spinneret_cc_min, 3))
+        st.metric("Num. Batteries Needed", num_batteries)
+        st.metric("Battery Flow Rate (L/min)", round(battery_flow_cc_per_min/1000, 2))
+    with col2:
+        st.metric("Velocity Leaving Spinneret (m/min)", round(vel_leaving_spinneret_m_min, 3))
+        st.metric("Solution Draw Ratio", round(solution_draw_ratio, 3))
+        st.metric("Fiber Cross Section at TU (cm²)", round(fiber_cross_section_cm2_TU, 6))
+        st.metric("Fiber Diameter at TU (μm, no shrinkage)", round(fiber_diameter_um, 4))
+        st.metric("Spinneret/Yarn", spinnerets_per_yarn)
+        st.metric("Filaments per Yarn", filaments_per_yarn)
+
+    st.caption(
+        f"{num_batteries} batteries, each feeding {spinnerets_per_battery} spinnerets ({battery_flow_cc_per_min/1000:.2f} L/min per battery). "
+        f"For {filaments_per_yarn} filaments/yarn, you need {spinnerets_per_yarn} spinnerets per yarn."
+    )
+
 
 # ---- Section: Stretching ----
 elif section == "Stretching":
