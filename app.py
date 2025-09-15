@@ -146,7 +146,7 @@ elif section == "Fiber Property":
 
     st.caption(
         "Calculation uses filament diameter to compute cross-sectional area and linear density, "
-        "and cross-checks measured dpf (g/9000m) against calculated value from geometry and density."
+        "and cross-checks measured dpf (g/9000m) against calculated value from geometry and density.")
 
 
 # ---- Section: Economic Summary ----
