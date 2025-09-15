@@ -226,8 +226,14 @@ elif section == "Stretching & Solvent Removal":
 
 # ---- Section: Raw Materials ----
 elif section == "Raw Materials":
-    st.header("Raw Materials")
-    st.write("Section under construction. Add your calculation logic and inputs here!")
+    st.header("Raw Materials Usage & Cost")
+    uhmppe_use_ton = st.number_input("UHMPE Usage (T/yr)", min_value=1.0, value=250.0)
+    solv_makeup_ton = st.number_input("Makeup Solvent (T/yr)", min_value=0.0, value=67.5)
+    additives_kg_yr = st.number_input("Additives (kg/yr)", min_value=0.0, value=2500.0)
+    uhmppe_cost_per_kg = st.number_input("UHMPE Cost ($/kg)", min_value=0.1, value=2.0)
+    solvent_cost_per_kg = st.number_input("Solvent Cost ($/kg)", min_value=0.1, value=2.0)
+    additive_cost_per_kg = st.number_input("Additive Cost ($/kg)", min_value=0.1, value=20.0)
+    # ...Calculate total annual cost for each (usage × $/kg)
 
 # ---- Section: Fiber Property ----
 elif section == "Fiber Property":
@@ -265,7 +271,9 @@ elif section == "Fiber Property":
 
 # ---- Section: Economic Summary ----
 elif section == "Economic Summary":
-    st.header("Economic Summary")
-    st.write("Section under construction. Add your calculation logic and summary outputs here!")
+    st.header("Profitability & Cost Summary")
+    capex_total = st.number_input("Total Capex ($)", min_value=1.0, value=915000.0)
+    capex_charge = capex_total * 0.25
+    # ...Display/metric for capex, process, sales, margin/kg, etc.
 
 # ---------- END ----------
