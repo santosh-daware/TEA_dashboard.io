@@ -121,7 +121,7 @@ elif selected_section == "Spinning":
     vel_leaving_spinneret_m_min = vol_flow_per_hole_m3_min / hole_cross_section_m2 if hole_cross_section_m2 else 0
     solution_draw_ratio = take_up_speed / vel_leaving_spinneret_m_min if vel_leaving_spinneret_m_min else 0
     
-    num_batteries = math.ceil(total_holes / (spinnerets_per_battery * (total_holes / st.session_state.get('holes_per_spinneret', 360))) if 'holes_per_spinneret' in st.session_state else 1
+    num_batteries = math.ceil(total_holes / (spinnerets_per_battery * (total_holes / st.session_state.get('holes_per_spinneret', 360)))) if 'holes_per_spinneret' in st.session_state else 1
     battery_flow_cc_per_min = solution_cc_per_min / num_batteries if num_batteries else 0
 
     col1, col2 = st.columns(2)
