@@ -62,6 +62,45 @@ if section == "Production Capacity":
     st.caption("Change any parameter above to see live updates.")
 
 # ---- Section: Solution Preparation ----
+import streamlit as st
+
+st.header("Polymer Solution Preparation")
+
+# --- User Inputs ---
+polymer_wt_frac = st.number_input("Polymer Weight Fraction in Solution (g/g)", min_value=0.001, max_value=1.0, value=0.1, step=0.01)
+dry_fiber_g_per_min = st.number_input("Dry Fiber Output (g/min)", min_value=1.0, value=578.7*10, step=1.0)  # Uses 5787.04 as default from your data
+solution_density = st.number_input("Polymer Solution Density (g/cc)", min_value=0.5, max_value=2.0, value=0.9, step=0.01)
+spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50, step=1)
+holes_per_spinneret = st.number_input("Holes Per Spinneret", min_value=1, value=360, step=1)
+
+# --- Calculations ---
+# Total polymer solution flow (g/min)
+solution_g_per_min = dry_fiber_g_per_min / polymer_wt_frac     # e.g. 5787.04 / 0.1 = 57870.4 g/min
+
+# Convert to cc/min with solution density
+solution_cc_per_min = solution_g_per_min / solution_density    # cc/min, e.g. 57870.4 / 0.9
+
+total_holes = spinnerets * holes_per_spinneret                 # total holes, e.g. 50*360
+
+# Flow per hole (cc/min)
+solution_cc_per_min_per_hole = solution_cc_per_min / total_holes
+
+# Flow per hole (g/min)
+solution_g_per_min_per_hole = solution_g_per_min / total_holes
+
+# --- Display ---
+col1, col2 = st.columns(2)
+with col1:
+    st.metric("Solution polymer flow (g/min)", round(solution_g_per_min, 2))
+    st.metric("Solution flow rate (cc/min)", round(solution_cc_per_min, 2))
+with col2:
+    st.metric("Solution flow per hole (cc/min/hole)", round(solution_cc_per_min_per_hole, 4))
+    st.metric("Solution flow per hole (g/min/hole)", round(solution_g_per_min_per_hole, 4))
+
+st.caption(
+    f"These values are based on a polymer weight fraction of {polymer_wt_frac}, a solution density of {solution_density} g/cc, and a total of {total_holes} spinning holes."
+)
+
 elif section == "Solution Preparation":
     st.header("Solution Preparation")
     st.write("Section under construction. Add your calculation logic and inputs here!")
