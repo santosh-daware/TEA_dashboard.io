@@ -1,208 +1,99 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": 3,
-   "id": "1b67095b-8dfb-425b-95cd-1c26896597e9",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
-      "Requirement already satisfied: streamlit in /opt/anaconda3/lib/python3.11/site-packages (1.30.0)\n",
-      "Requirement already satisfied: altair<6,>=4.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (5.0.1)\n",
-      "Requirement already satisfied: blinker<2,>=1.0.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (1.6.2)\n",
-      "Requirement already satisfied: cachetools<6,>=4.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (4.2.2)\n",
-      "Requirement already satisfied: click<9,>=7.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (8.1.7)\n",
-      "Requirement already satisfied: importlib-metadata<8,>=1.4 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (7.0.1)\n",
-      "Requirement already satisfied: numpy<2,>=1.19.3 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (1.26.4)\n",
-      "Requirement already satisfied: packaging<24,>=16.8 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (23.1)\n",
-      "Requirement already satisfied: pandas<3,>=1.3.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (2.1.4)\n",
-      "Requirement already satisfied: pillow<11,>=7.1.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (10.2.0)\n",
-      "Requirement already satisfied: protobuf<5,>=3.20 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (3.20.3)\n",
-      "Requirement already satisfied: pyarrow>=6.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (14.0.2)\n",
-      "Requirement already satisfied: python-dateutil<3,>=2.7.3 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (2.8.2)\n",
-      "Requirement already satisfied: requests<3,>=2.27 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (2.31.0)\n",
-      "Requirement already satisfied: rich<14,>=10.14.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (13.3.5)\n",
-      "Requirement already satisfied: tenacity<9,>=8.1.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (8.2.2)\n",
-      "Requirement already satisfied: toml<2,>=0.10.1 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (0.10.2)\n",
-      "Requirement already satisfied: typing-extensions<5,>=4.3.0 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (4.9.0)\n",
-      "Requirement already satisfied: tzlocal<6,>=1.1 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (2.1)\n",
-      "Requirement already satisfied: validators<1,>=0.2 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (0.18.2)\n",
-      "Requirement already satisfied: gitpython!=3.1.19,<4,>=3.0.7 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (3.1.37)\n",
-      "Requirement already satisfied: pydeck<1,>=0.8.0b4 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (0.8.0)\n",
-      "Requirement already satisfied: tornado<7,>=6.0.3 in /opt/anaconda3/lib/python3.11/site-packages (from streamlit) (6.3.3)\n",
-      "Requirement already satisfied: jinja2 in /opt/anaconda3/lib/python3.11/site-packages (from altair<6,>=4.0->streamlit) (3.1.3)\n",
-      "Requirement already satisfied: jsonschema>=3.0 in /opt/anaconda3/lib/python3.11/site-packages (from altair<6,>=4.0->streamlit) (4.19.2)\n",
-      "Requirement already satisfied: toolz in /opt/anaconda3/lib/python3.11/site-packages (from altair<6,>=4.0->streamlit) (0.12.0)\n",
-      "Requirement already satisfied: gitdb<5,>=4.0.1 in /opt/anaconda3/lib/python3.11/site-packages (from gitpython!=3.1.19,<4,>=3.0.7->streamlit) (4.0.7)\n",
-      "Requirement already satisfied: zipp>=0.5 in /opt/anaconda3/lib/python3.11/site-packages (from importlib-metadata<8,>=1.4->streamlit) (3.17.0)\n",
-      "Requirement already satisfied: pytz>=2020.1 in /opt/anaconda3/lib/python3.11/site-packages (from pandas<3,>=1.3.0->streamlit) (2023.3.post1)\n",
-      "Requirement already satisfied: tzdata>=2022.1 in /opt/anaconda3/lib/python3.11/site-packages (from pandas<3,>=1.3.0->streamlit) (2023.3)\n",
-      "Requirement already satisfied: six>=1.5 in /opt/anaconda3/lib/python3.11/site-packages (from python-dateutil<3,>=2.7.3->streamlit) (1.16.0)\n",
-      "Requirement already satisfied: charset-normalizer<4,>=2 in /opt/anaconda3/lib/python3.11/site-packages (from requests<3,>=2.27->streamlit) (2.0.4)\n",
-      "Requirement already satisfied: idna<4,>=2.5 in /opt/anaconda3/lib/python3.11/site-packages (from requests<3,>=2.27->streamlit) (3.4)\n",
-      "Requirement already satisfied: urllib3<3,>=1.21.1 in /opt/anaconda3/lib/python3.11/site-packages (from requests<3,>=2.27->streamlit) (2.0.7)\n",
-      "Requirement already satisfied: certifi>=2017.4.17 in /opt/anaconda3/lib/python3.11/site-packages (from requests<3,>=2.27->streamlit) (2024.2.2)\n",
-      "Requirement already satisfied: markdown-it-py<3.0.0,>=2.2.0 in /opt/anaconda3/lib/python3.11/site-packages (from rich<14,>=10.14.0->streamlit) (2.2.0)\n",
-      "Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /opt/anaconda3/lib/python3.11/site-packages (from rich<14,>=10.14.0->streamlit) (2.15.1)\n",
-      "Requirement already satisfied: decorator>=3.4.0 in /opt/anaconda3/lib/python3.11/site-packages (from validators<1,>=0.2->streamlit) (5.1.1)\n",
-      "Requirement already satisfied: smmap<5,>=3.0.1 in /opt/anaconda3/lib/python3.11/site-packages (from gitdb<5,>=4.0.1->gitpython!=3.1.19,<4,>=3.0.7->streamlit) (4.0.0)\n",
-      "Requirement already satisfied: MarkupSafe>=2.0 in /opt/anaconda3/lib/python3.11/site-packages (from jinja2->altair<6,>=4.0->streamlit) (2.1.3)\n",
-      "Requirement already satisfied: attrs>=22.2.0 in /opt/anaconda3/lib/python3.11/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (23.1.0)\n",
-      "Requirement already satisfied: jsonschema-specifications>=2023.03.6 in /opt/anaconda3/lib/python3.11/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (2023.7.1)\n",
-      "Requirement already satisfied: referencing>=0.28.4 in /opt/anaconda3/lib/python3.11/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (0.30.2)\n",
-      "Requirement already satisfied: rpds-py>=0.7.1 in /opt/anaconda3/lib/python3.11/site-packages (from jsonschema>=3.0->altair<6,>=4.0->streamlit) (0.10.6)\n",
-      "Requirement already satisfied: mdurl~=0.1 in /opt/anaconda3/lib/python3.11/site-packages (from markdown-it-py<3.0.0,>=2.2.0->rich<14,>=10.14.0->streamlit) (0.1.0)\n",
-      "Note: you may need to restart the kernel to use updated packages.\n"
-     ]
-    }
-   ],
-   "source": [
-    "pip install streamlit"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": 4,
-   "id": "5b7d672e-8534-4499-9d61-91d6caab633d",
-   "metadata": {},
-   "outputs": [
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      "2025-09-15 12:54:04.022 \n",
-      "  \u001b[33m\u001b[1mWarning:\u001b[0m to view this Streamlit app on a browser, run it with the following\n",
-      "  command:\n",
-      "\n",
-      "    streamlit run /opt/anaconda3/lib/python3.11/site-packages/ipykernel_launcher.py [ARGUMENTS]\n"
-     ]
-    }
-   ],
-   "source": [
-    "import streamlit as st\n",
-    "\n",
-    "st.set_page_config(page_title=\"Fiber Techno-Economic Analysis\", layout=\"wide\")\n",
-    "\n",
-    "st.title(\"Techno-Economic Fiber Production Analysis\")\n",
-    "\n",
-    "# --- Sidebar Section Navigation ---\n",
-    "section = st.sidebar.selectbox(\n",
-    "    \"Choose a Section\",\n",
-    "    [\n",
-    "        \"Production Capacity\",\n",
-    "        \"Solution Preparation\",\n",
-    "        \"Extruder\",\n",
-    "        \"Spinning\",\n",
-    "        \"Stretching\",\n",
-    "        \"Drying\",\n",
-    "        \"Raw Materials\",\n",
-    "        \"Economic Summary\"\n",
-    "    ]\n",
-    ")\n",
-    "\n",
-    "# ---- Section: Production Capacity ----\n",
-    "if section == \"Production Capacity\":\n",
-    "    st.header(\"Production Capacity\")\n",
-    "\n",
-    "    # Inputs (editable)\n",
-    "    annual_production_ton = st.number_input(\"Annual Production (tons/year)\", min_value=1, value=250)\n",
-    "    operational_days = st.number_input(\"Operational Days per Year\", min_value=1, max_value=366, value=300)\n",
-    "    dpf = st.number_input(\"Filament Linear Density (dpf)\", min_value=0.01, value=3.1)\n",
-    "    take_up_speed = st.number_input(\"Take-up Speed (m/min)\", min_value=1, value=100)\n",
-    "    spinnerets = st.number_input(\"Number of Spinnerets\", min_value=1, value=50)\n",
-    "    holes_per_spinneret = st.number_input(\"Holes Per Spinneret\", min_value=1, value=360)\n",
-    "\n",
-    "    # Calculations\n",
-    "    operational_minutes = operational_days * 24 * 60\n",
-    "    annual_production_kg = annual_production_ton * 1000\n",
-    "    annual_production_g = annual_production_kg * 1000\n",
-    "    g_per_min = annual_production_g / operational_minutes\n",
-    "    g_per_m = dpf / 9000\n",
-    "    filament_m_per_min = g_per_min / g_per_m\n",
-    "    n_filaments_needed = filament_m_per_min / take_up_speed\n",
-    "    n_spinneret_holes = spinnerets * holes_per_spinneret\n",
-    "\n",
-    "    col1, col2 = st.columns(2)\n",
-    "    with col1:\n",
-    "        st.metric(\"Dry Fiber Output (g/min)\", round(g_per_min, 2))\n",
-    "        st.metric(\"Filament Linear Density (g/m)\", g_per_m)\n",
-    "        st.metric(\"Filament Linear Density (dpf)\", dpf)\n",
-    "        st.metric(\"Operational Time (min/year)\", operational_minutes)\n",
-    "    with col2:\n",
-    "        st.metric(\"Total Filament Output (m/min)\", int(filament_m_per_min))\n",
-    "        st.metric(\"Take-up Speed (m/min)\", take_up_speed)\n",
-    "        st.metric(\"Filaments Needed\", int(n_filaments_needed))\n",
-    "        st.metric(\"Design Filaments (Spinneret Holes)\", n_spinneret_holes)\n",
-    "\n",
-    "    st.info(\n",
-    "        f\"**Design Used:** {spinnerets} spinnerets × {holes_per_spinneret} holes = \"\n",
-    "        f\"{n_spinneret_holes:,} filaments (compare to {int(n_filaments_needed):,} minimum needed)\\n\"\n",
-    "        \"To reach higher annual output, run additional production trains in parallel.\"\n",
-    "    )\n",
-    "\n",
-    "    st.caption(\"Change any parameter above to see live updates.\")\n",
-    "\n",
-    "# ---- Section: Solution Preparation ----\n",
-    "elif section == \"Solution Preparation\":\n",
-    "    st.header(\"Solution Preparation\")\n",
-    "    st.write(\"Section under construction. Add your calculation logic and inputs here!\")\n",
-    "\n",
-    "# ---- Section: Extruder ----\n",
-    "elif section == \"Extruder\":\n",
-    "    st.header(\"Extruder\")\n",
-    "    st.write(\"Section under construction. Add your calculation logic and inputs here!\")\n",
-    "\n",
-    "# ---- Section: Spinning ----\n",
-    "elif section == \"Spinning\":\n",
-    "    st.header(\"Spinning\")\n",
-    "    st.write(\"Section under construction. Add your calculation logic and inputs here!\")\n",
-    "\n",
-    "# ---- Section: Stretching ----\n",
-    "elif section == \"Stretching\":\n",
-    "    st.header(\"Stretching\")\n",
-    "    st.write(\"Section under construction. Add your calculation logic and inputs here!\")\n",
-    "\n",
-    "# ---- Section: Drying ----\n",
-    "elif section == \"Drying\":\n",
-    "    st.header(\"Drying\")\n",
-    "    st.write(\"Section under construction. Add your calculation logic and inputs here!\")\n",
-    "\n",
-    "# ---- Section: Raw Materials ----\n",
-    "elif section == \"Raw Materials\":\n",
-    "    st.header(\"Raw Materials\")\n",
-    "    st.write(\"Section under construction. Add your calculation logic and inputs here!\")\n",
-    "\n",
-    "# ---- Section: Economic Summary ----\n",
-    "elif section == \"Economic Summary\":\n",
-    "    st.header(\"Economic Summary\")\n",
-    "    st.write(\"Section under construction. Add your calculation logic and summary outputs here!\")\n",
-    "\n",
-    "# ---------- END ----------\n"
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.11.7"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+import streamlit as st
+
+st.set_page_config(page_title="Fiber Techno-Economic Analysis", layout="wide")
+
+st.title("Techno-Economic Fiber Production Analysis")
+
+# --- Sidebar Section Navigation ---
+section = st.sidebar.selectbox(
+    "Choose a Section",
+    [
+        "Production Capacity",
+        "Solution Preparation",
+        "Extruder",
+        "Spinning",
+        "Stretching",
+        "Drying",
+        "Raw Materials",
+        "Economic Summary"
+    ]
+)
+
+# ---- Section: Production Capacity ----
+if section == "Production Capacity":
+    st.header("Production Capacity")
+
+    # Inputs (editable)
+    annual_production_ton = st.number_input("Annual Production (tons/year)", min_value=1, value=250)
+    operational_days = st.number_input("Operational Days per Year", min_value=1, max_value=366, value=300)
+    dpf = st.number_input("Filament Linear Density (dpf)", min_value=0.01, value=3.1)
+    take_up_speed = st.number_input("Take-up Speed (m/min)", min_value=1, value=100)
+    spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50)
+    holes_per_spinneret = st.number_input("Holes Per Spinneret", min_value=1, value=360)
+
+    # Calculations
+    operational_minutes = operational_days * 24 * 60
+    annual_production_kg = annual_production_ton * 1000
+    annual_production_g = annual_production_kg * 1000
+    g_per_min = annual_production_g / operational_minutes
+    g_per_m = dpf / 9000
+    filament_m_per_min = g_per_min / g_per_m
+    n_filaments_needed = filament_m_per_min / take_up_speed
+    n_spinneret_holes = spinnerets * holes_per_spinneret
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Dry Fiber Output (g/min)", round(g_per_min, 2))
+        st.metric("Filament Linear Density (g/m)", g_per_m)
+        st.metric("Filament Linear Density (dpf)", dpf)
+        st.metric("Operational Time (min/year)", operational_minutes)
+    with col2:
+        st.metric("Total Filament Output (m/min)", int(filament_m_per_min))
+        st.metric("Take-up Speed (m/min)", take_up_speed)
+        st.metric("Filaments Needed", int(n_filaments_needed))
+        st.metric("Design Filaments (Spinneret Holes)", n_spinneret_holes)
+
+    st.info(
+        f"**Design Used:** {spinnerets} spinnerets × {holes_per_spinneret} holes = "
+        f"{n_spinneret_holes:,} filaments (compare to {int(n_filaments_needed):,} minimum needed)\n"
+        "To reach higher annual output, run additional production trains in parallel."
+    )
+
+    st.caption("Change any parameter above to see live updates.")
+
+# ---- Section: Solution Preparation ----
+elif section == "Solution Preparation":
+    st.header("Solution Preparation")
+    st.write("Section under construction. Add your calculation logic and inputs here!")
+
+# ---- Section: Extruder ----
+elif section == "Extruder":
+    st.header("Extruder")
+    st.write("Section under construction. Add your calculation logic and inputs here!")
+
+# ---- Section: Spinning ----
+elif section == "Spinning":
+    st.header("Spinning")
+    st.write("Section under construction. Add your calculation logic and inputs here!")
+
+# ---- Section: Stretching ----
+elif section == "Stretching":
+    st.header("Stretching")
+    st.write("Section under construction. Add your calculation logic and inputs here!")
+
+# ---- Section: Drying ----
+elif section == "Drying":
+    st.header("Drying")
+    st.write("Section under construction. Add your calculation logic and inputs here!")
+
+# ---- Section: Raw Materials ----
+elif section == "Raw Materials":
+    st.header("Raw Materials")
+    st.write("Section under construction. Add your calculation logic and inputs here!")
+
+# ---- Section: Economic Summary ----
+elif section == "Economic Summary":
+    st.header("Economic Summary")
+    st.write("Section under construction. Add your calculation logic and summary outputs here!")
+
+# ---------- END ----------
