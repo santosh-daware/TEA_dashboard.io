@@ -1,7 +1,7 @@
 import streamlit as st
 import math
-import plotly.express as px
 import pandas as pd
+import altair as alt
 
 st.set_page_config(page_title="Fiber Techno-Economic Analysis", layout="wide")
 
@@ -123,7 +123,7 @@ elif selected_section == "Spinning":
     vel_leaving_spinneret_m_min = vol_flow_per_hole_m3_min / hole_cross_section_m2 if hole_cross_section_m2 else 0
     solution_draw_ratio = take_up_speed / vel_leaving_spinneret_m_min if vel_leaving_spinneret_m_min else 0
     
-    num_batteries = math.ceil(total_holes / (spinnerets_per_battery * (total_holes / st.session_state.get('holes_per_spinneret', 360)))) if 'holes_per_spinneret' in st.session_state else 1
+    num_batteries = math.ceil(total_holes / (spinnerets_per_battery * (total_holes / 360))) if 'holes_per_spinneret' in st.session_state else 1
     battery_flow_cc_per_min = solution_cc_per_min / num_batteries if num_batteries else 0
 
     col1, col2 = st.columns(2)
@@ -178,7 +178,7 @@ elif selected_section == "Drying":
         final_moisture = st.number_input("Final Moisture (%)", min_value=0.0, value=1.0, step=0.1)
         energy_consumption = st.number_input("Energy Consumption (kWh/kg water)", min_value=0.1, value=1.2, step=0.1)
     
-    water_removed = (initial_moisture - final_moisture) / 100 * st.session_state.get('dry_fiber_g_per_min', 5787.04) / 1000 if 'dry_fiber_g_per_min' in st.session_state else 0
+    water_removed = (initial_moisture - final_moisture) / 100 * 5787.04 / 1000
     drying_energy = water_removed * energy_consumption
     
     st.metric("Water Removed (kg/h)", round(water_removed * 60, 2))
@@ -201,7 +201,7 @@ elif selected_section == "Raw Materials":
     material_costs = (
         (uhmwpe_use_ton * 1000 * uhmwpe_cost) +
         (solvent_makeup_ton * 1000 * solvent_cost) +
-        (additives_kg_yr * additive_cost / 1000)
+        (additives_kg_yr * additive_cost)
     )
     
     st.metric("Total Material Cost ($/yr)", round(material_costs, 2))
@@ -260,24 +260,22 @@ elif selected_section == "Economic Summary":
     roi = annual_profit / capex_total * 100 if capex_total else 0
     
     # Create cost breakdown for pie chart
-    cost_categories = {
-        'Materials': material_cost,
-        'Labor': labor_cost,
-        'Utilities': utility_cost,
-        'Maintenance': maintenance_cost,
-        'Other Costs': other_costs,
-        'Depreciation': depreciation_cost
-    }
-    
-    # Create pie chart
-    df_costs = pd.DataFrame({
-        'Category': list(cost_categories.keys()),
-        'Amount': list(cost_categories.values())
+    cost_data = pd.DataFrame({
+        'Category': ['Materials', 'Labor', 'Utilities', 'Maintenance', 'Other Costs', 'Depreciation'],
+        'Amount': [material_cost, labor_cost, utility_cost, maintenance_cost, other_costs, depreciation_cost]
     })
     
-    fig = px.pie(df_costs, values='Amount', names='Category', 
-                 title='Annual Cost Distribution',
-                 color_discrete_sequence=px.colors.qualitative.Set3)
+    # Create pie chart using Altair
+    pie_chart = alt.Chart(cost_data).mark_arc().encode(
+        theta=alt.Theta(field="Amount", type="quantitative"),
+        color=alt.Color(field="Category", type="nominal", 
+                       scale=alt.Scale(scheme='category10')),
+        tooltip=['Category', 'Amount']
+    ).properties(
+        width=400,
+        height=400,
+        title='Annual Cost Distribution'
+    )
     
     # Display results
     col1, col2 = st.columns(2)
@@ -290,7 +288,7 @@ elif selected_section == "Economic Summary":
         st.metric("Break-even Price ($/kg)", f"{total_annual_costs / (annual_production * 1000):.2f}")
     
     with col2:
-        st.plotly_chart(fig, use_container_width=True)
+        st.altair_chart(pie_chart, use_container_width=True)
 
 st.markdown("---")
 st.caption("Fiber Production Techno-Economic Analysis Tool v1.0")
