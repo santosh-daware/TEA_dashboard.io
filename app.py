@@ -15,6 +15,7 @@ section = st.sidebar.selectbox(
         "Stretching",
         "Drying",
         "Raw Materials",
+        "Fiber Property",
         "Economic Summary"
     ]
 )
@@ -113,6 +114,40 @@ elif section == "Drying":
 elif section == "Raw Materials":
     st.header("Raw Materials")
     st.write("Section under construction. Add your calculation logic and inputs here!")
+
+# ---- Section: Fiber Property ----
+elif section == "Fiber Property":
+    st.header("Fiber Property Calculations")
+
+    # Editable Inputs
+    filament_diameter_um = st.number_input("Filament Diameter (μm)", min_value=1.0, value=22.08, step=0.01)
+    filament_density = st.number_input("Density of PE (g/cc)", min_value=0.1, value=0.9, step=0.01)
+    dpf = st.number_input("Denier Per Filament (dpf)", min_value=0.01, value=3.1, step=0.01)
+
+    # Calculations
+    filament_diameter_cm = filament_diameter_um / 10000  # μm → cm
+    filament_crosssection_cm2 = 3.1416 * (filament_diameter_cm/2)**2  # A = πr^2
+
+    # Filament g/1m: volume per length (cm^2 × 100 cm = cm^3) × density
+    filament_g_per_m = filament_crosssection_cm2 * 100 * filament_density  # g/m
+
+    # Cross-check with dpf:
+    # 1 dpf = 1 g / 9000 m; dpf for this filament: filament_g_per_m * 9000
+    calculated_dpf = filament_g_per_m * 9000
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Filament Diameter (μm)", filament_diameter_um)
+        st.metric("Filament Cross-section (cm²)", filament_crosssection_cm2)
+        st.metric("Filament Linear Density (g/m)", filament_g_per_m)
+    with col2:
+        st.metric("Cross-check dpf from g/m", calculated_dpf)
+        st.metric("Input Denier Per Filament", dpf)
+
+    st.caption(
+        "Calculation uses filament diameter to compute cross-sectional area and linear density, "
+        "and cross-checks measured dpf (g/9000m) against calculated value from geometry and density."
+
 
 # ---- Section: Economic Summary ----
 elif section == "Economic Summary":
