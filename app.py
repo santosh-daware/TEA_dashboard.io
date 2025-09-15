@@ -1,5 +1,7 @@
 import streamlit as st
 import math
+import plotly.express as px
+import pandas as pd
 
 st.set_page_config(page_title="Fiber Techno-Economic Analysis", layout="wide")
 
@@ -18,10 +20,10 @@ selected_section = st.radio("Navigate to Section:", sections, horizontal=True)
 st.markdown("---")
 
 # Add a schematic image (replace with your actual image path)
-st.image("https://via.placeholder.com/800x300?text=Fiber+Production+Process+Schematic", 
-         use_column_width=True, caption="Fiber Production Process Schematic")
-
-st.markdown("---")
+col1, col2 = st.columns([2, 1])
+with col1:
+    st.image("https://via.placeholder.com/800x400?text=Fiber+Production+Process+Schematic", 
+             use_container_width=True, caption="Fiber Production Process Schematic")
 
 # ---- Section: Production Capacity ----
 if selected_section == "Production Capacity":
@@ -121,7 +123,7 @@ elif selected_section == "Spinning":
     vel_leaving_spinneret_m_min = vol_flow_per_hole_m3_min / hole_cross_section_m2 if hole_cross_section_m2 else 0
     solution_draw_ratio = take_up_speed / vel_leaving_spinneret_m_min if vel_leaving_spinneret_m_min else 0
     
-    num_batteries = math.ceil(total_holes / (spinnerets_per_battery * (total_holes / st.session_state.get('holes_per_spinneret', 360)))) if 'holes_per_spinneret' in st.session_state else 1
+    num_batteries = math.ceil(total_holes / (spinnerets_per_battery * (total_holes / st.session_state.get('holes_per_spinneret', 360))) if 'holes_per_spinneret' in st.session_state else 1
     battery_flow_cc_per_min = solution_cc_per_min / num_batteries if num_batteries else 0
 
     col1, col2 = st.columns(2)
@@ -238,32 +240,57 @@ elif selected_section == "Economic Summary":
     col1, col2, col3 = st.columns(3)
     with col1:
         capex_total = st.number_input("Total Capex ($)", min_value=1.0, value=915000.0)
-        opex_per_year = st.number_input("Annual Opex ($)", min_value=1.0, value=350000.0)
-        material_cost_per_kg = st.number_input("Material Cost ($/kg)", min_value=0.01, value=2.5, step=0.1)
+        labor_cost = st.number_input("Labor Cost ($/yr)", min_value=0.0, value=200000.0)
+        utility_cost = st.number_input("Utility Cost ($/yr)", min_value=0.0, value=50000.0)
     with col2:
         fiber_price = st.number_input("Fiber Selling Price ($/kg)", min_value=0.01, value=15.0, step=0.1)
         annual_production = st.number_input("Annual Production (tons)", min_value=1.0, value=250.0)
-        depreciation_years = st.number_input("Depreciation Period (years)", min_value=1, value=10)
+        maintenance_cost = st.number_input("Maintenance Cost ($/yr)", min_value=0.0, value=75000.0)
     with col3:
-        labor_cost = st.number_input("Labor Cost ($/yr)", min_value=0.0, value=200000.0)
-        utility_cost = st.number_input("Utility Cost ($/yr)", min_value=0.0, value=50000.0)
+        material_cost_per_kg = st.number_input("Material Cost ($/kg)", min_value=0.01, value=2.5, step=0.1)
+        depreciation_years = st.number_input("Depreciation Period (years)", min_value=1, value=10)
         other_costs = st.number_input("Other Costs ($/yr)", min_value=0.0, value=50000.0)
     
+    # Calculate costs
+    material_cost = annual_production * 1000 * material_cost_per_kg
+    depreciation_cost = capex_total / depreciation_years
+    total_annual_costs = material_cost + labor_cost + utility_cost + maintenance_cost + other_costs + depreciation_cost
     annual_revenue = annual_production * 1000 * fiber_price
-    total_annual_costs = (annual_production * 1000 * material_cost_per_kg) + opex_per_year + labor_cost + utility_cost + other_costs
     annual_profit = annual_revenue - total_annual_costs
-    capex_annual = capex_total / depreciation_years
     roi = annual_profit / capex_total * 100 if capex_total else 0
     
+    # Create cost breakdown for pie chart
+    cost_categories = {
+        'Materials': material_cost,
+        'Labor': labor_cost,
+        'Utilities': utility_cost,
+        'Maintenance': maintenance_cost,
+        'Other Costs': other_costs,
+        'Depreciation': depreciation_cost
+    }
+    
+    # Create pie chart
+    df_costs = pd.DataFrame({
+        'Category': list(cost_categories.keys()),
+        'Amount': list(cost_categories.values())
+    })
+    
+    fig = px.pie(df_costs, values='Amount', names='Category', 
+                 title='Annual Cost Distribution',
+                 color_discrete_sequence=px.colors.qualitative.Set3)
+    
+    # Display results
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("Annual Revenue ($)", round(annual_revenue, 2))
-        st.metric("Annual Costs ($)", round(total_annual_costs, 2))
-        st.metric("Annual Profit ($)", round(annual_profit, 2))
+        st.metric("Annual Revenue ($)", f"{annual_revenue:,.2f}")
+        st.metric("Annual Costs ($)", f"{total_annual_costs:,.2f}")
+        st.metric("Annual Profit ($)", f"{annual_profit:,.2f}")
+        st.metric("ROI (%)", f"{roi:.1f}")
+        st.metric("Payback Period (years)", f"{capex_total / annual_profit:.1f}" if annual_profit > 0 else "N/A")
+        st.metric("Break-even Price ($/kg)", f"{total_annual_costs / (annual_production * 1000):.2f}")
+    
     with col2:
-        st.metric("ROI (%)", round(roi, 1))
-        st.metric("Payback Period (years)", round(capex_total / annual_profit, 1) if annual_profit > 0 else float('inf'))
-        st.metric("Break-even Price ($/kg)", round(total_annual_costs / (annual_production * 1000), 2))
+        st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 st.caption("Fiber Production Techno-Economic Analysis Tool v1.0")
