@@ -12,7 +12,7 @@ section = st.sidebar.selectbox(
         "Solution Preparation",
         "Extruder",
         "Spinning",
-        "Stretching",
+        "Stretching & Solvent Removal",
         "Drying",
         "Raw Materials",
         "Fiber Property",
@@ -163,14 +163,66 @@ elif section == "Spinning":
 
 
 # ---- Section: Stretching ----
-elif section == "Stretching":
-    st.header("Stretching")
-    st.write("Section under construction. Add your calculation logic and inputs here!")
+elif section == "Stretching & Solvent Removal":
+    st.header("Stretching from As-Spun Fiber (ASF) to Final Filament & Solvent Removal")
 
-# ---- Section: Drying ----
-elif section == "Drying":
-    st.header("Drying")
-    st.write("Section under construction. Add your calculation logic and inputs here!")
+    import math
+
+    # --- User Inputs ---
+    draw_ratio = st.number_input("Draw Ratio (ASF → Final)", min_value=0.1, value=9.33, step=0.01)
+    asf_g_per_min = st.number_input("ASF Dry Fiber Output (g/min)", min_value=0.01, value=643.0, step=1.0)
+    solvent_removed_g_per_min = st.number_input("Solvent Removed (g/min)", min_value=1.0, value=5208.33, step=1.0)
+    fiber_ac_final_cm2 = st.number_input("Fiber Cross-section (Shrunk, cm²)", min_value=1e-7, value=3.82915E-06, format="%.8e")
+    fiber_ac_asf_cm2 = st.number_input("Fiber ASF Cross-section (K20, cm²)", min_value=1e-7, value=3.57418E-05, format="%.8e")
+    vel_tu_shrunk_m_min = st.number_input("Take-Up Speed (Shrunk, m/min)", min_value=0.1, value=150.0, step=1.0)
+    mw_hexane = st.number_input("MW Hexane (g/mol)", min_value=1.0, value=86.0)
+    solvent_conc_exit = st.number_input("Solvent Conc. at Exit (wt%, as fraction)", min_value=0.0, max_value=1.0, value=0.20, step=0.01)
+    hexane_sp_heat_kj_kgC = st.number_input("Specific Heat (Hexane, kJ/kg·C)", min_value=0.1, value=2.26, step=0.01)
+    hexane_ht_vap_kj_kg = st.number_input("Heat of Vaporization (Hexane, kJ/kg)", min_value=1.0, value=370.0, step=1.0)
+    delta_T = st.number_input("ΔT to Boiling Point (C)", min_value=0.1, value=50.0, step=1.0)
+    operational_hours = st.number_input("Annual Operation (hours)", min_value=1.0, value=7200.0, step=1.0)  # ~300d x 24h
+    electrical_efficiency = st.number_input("Electrical Efficiency", min_value=0.01, max_value=1.0, value=0.7, step=0.01)
+    electricity_cost_usd_per_kwh = st.number_input("Electricity Cost ($/kWhr)", min_value=0.01, value=0.15, step=0.01)
+
+    # --- Calculations ---
+    # Remaining polymer, cc/min (assuming density ~1cc/g for estimation)
+    remaining_polymer_cc_min = asf_g_per_min  # as 1g ≈ 1cc for estimation
+
+    # Vol. flow per filament after solvent removal (cc/min/fil) - user can adjust as needed
+    vol_flow_per_filament_cc_min = st.number_input("Volumetric Flow per Filament (cc/min)", min_value=1e-4, value=0.3215, step=0.001)
+
+    # Velocity ratio during shrinkage
+    vel_tu_shrunk_cm_min = vel_tu_shrunk_m_min * 100
+    vel_ratio_during_shrink = vel_tu_shrunk_cm_min / (vel_tu_shrunk_m_min if vel_tu_shrunk_m_min else 1)
+
+    # Hexane calculations
+    hexane_required_kg_min = st.number_input("Hexane Required (kg/min)", min_value=0.01, value=26.04167, step=0.01)
+    hexane_required_kg_hr = hexane_required_kg_min * 60
+    power_hexane_evap_kj_hr = (hexane_required_kg_hr * (hexane_sp_heat_kj_kgC * delta_T + hexane_ht_vap_kj_kg))
+    power_hexane_evap_kw = power_hexane_evap_kj_hr / 3600
+    annual_hexane_evap_kwh = power_hexane_evap_kw * operational_hours / electrical_efficiency
+    annual_solvent_heat_cost = annual_hexane_evap_kwh * electricity_cost_usd_per_kwh
+
+    # --- Display ---
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Draw Ratio (ASF → Final)", draw_ratio)
+        st.metric("Solvent Removed (g/min)", solvent_removed_g_per_min)
+        st.metric("Remaining Polymer (cc/min)", remaining_polymer_cc_min)
+        st.metric("Velocity Ratio During Shrinkage", round(vel_ratio_during_shrink, 3))
+        st.metric("Cross-section Shrunk Fiber (cm²)", fiber_ac_final_cm2)
+        st.metric("Cross-section ASF Fiber (cm²)", fiber_ac_asf_cm2)
+    with col2:
+        st.metric("Hexane Required (kg/min)", hexane_required_kg_min)
+        st.metric("Annual Evap. Power (kWh)", round(annual_hexane_evap_kwh, 1))
+        st.metric("Annual Solvent Heat Cost ($)", round(annual_solvent_heat_cost, 2))
+        st.metric("Electrical Efficiency", electrical_efficiency)
+        st.metric("Electricity Cost ($/kWh)", electricity_cost_usd_per_kwh)
+
+    st.caption(
+        "Shrinkage, draw ratio, solvent removal, and hexane evaporation power/cost calculations "
+        "support post-spinning processing and economics."
+    )
 
 # ---- Section: Raw Materials ----
 elif section == "Raw Materials":
