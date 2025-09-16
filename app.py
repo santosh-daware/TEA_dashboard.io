@@ -281,7 +281,3 @@ elif selected_section == "Economic Summary":
     st.metric("Annual Profit ($)", f"{annual_profit:,.2f}")
     st.metric("ROI (%)", f"{roi:.1f}")
     st.metric("Payback Period (years)", f"{payback_period:.1f}")
-
-
-
-)
