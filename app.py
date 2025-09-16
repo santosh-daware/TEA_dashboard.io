@@ -282,9 +282,6 @@ elif selected_section == "Economic Summary":
     st.metric("ROI (%)", f"{roi:.1f}")
     st.metric("Payback Period (years)", f"{payback_period:.1f}")
 
-# --- GUIDELINES & REFERENCES (bottom of app) ---
-st.markdown("---")
-st.markdown(
-"""
+
 
 )
