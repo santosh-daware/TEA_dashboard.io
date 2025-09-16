@@ -13,7 +13,7 @@ sections = [
 selected_section = st.radio("Navigate to Section:", sections, horizontal=True)
 st.markdown("---")
 
-# ------- UNIVERSAL INPUTS (design parameters) --------
+# --- UNIVERSAL INPUTS (design parameters) ---
 default_params = {
     "annual_production": 250,
     "operational_days": 300,
@@ -45,7 +45,7 @@ for k, v in default_params.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# Major flows and calculations
+# Calculated/global values
 st.session_state['total_holes'] = int(st.session_state['spinnerets']) * int(st.session_state['holes_per_spinneret'])
 st.session_state['annual_production_g'] = st.session_state['annual_production'] * 1000 * 1000
 st.session_state['annual_production_kg'] = st.session_state['annual_production'] * 1000
@@ -71,7 +71,7 @@ if st.session_state['total_holes'] > 0:
 else:
     st.session_state['solution_cc_per_min_per_hole'] = 0
 
-# -- Utility/Energy Costs: Only Extruder and Drying Oven --
+# Utility/Energy Costs: Only Extruder and Drying Oven
 st.session_state['extruder_utility_cost'] = (
     st.session_state['extruder_power_kw'] *
     st.session_state['operational_hours'] *
@@ -218,18 +218,25 @@ elif selected_section == "Production Capacity":
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Filament Linear Density (g/m)", round(st.session_state['filament_g_per_m'], 6), "from dpf")
+        st.latex(r"\text{Filament Linear Density (g/m)} = \frac{\text{DPF}}{9000}")
         st.metric("Dry Fiber Output (g/min)", round(st.session_state['dry_fiber_g_per_min'], 2))
+        st.latex(r"\text{Dry Fiber Output (g/min)} = \frac{\text{Annual Production (g)}}{\text{Operational Minutes}}")
     with col2:
         st.metric("Total Filament Output (m/min)", 
                   int(st.session_state['dry_fiber_g_per_min'] / st.session_state['filament_g_per_m']) if st.session_state['filament_g_per_m'] else 0)
+        st.latex(r"\text{Total Filament Output (m/min)} = \frac{\text{Dry Fiber Output (g/min)}}{\text{Filament Linear Density (g/m)}}")
         st.metric("Total Spinneret Holes", int(st.session_state['total_holes']))
+        st.latex(r"\text{Total Spinneret Holes} = \text{Spinnerets} \times \text{Holes Per Spinneret}")
     st.metric("Take-up Speed (m/min)", st.session_state['take_up_speed'])
 
 elif selected_section == "Solution Preparation":
     st.header("Solution Preparation (auto-calculated from design)")
     st.metric("Solution Flow (g/min)", round(st.session_state['solution_g_per_min'], 2))
+    st.latex(r"\text{Solution Flow (g/min)} = \frac{\text{Dry Fiber Output (g/min)}}{\text{Polymer Weight Fraction}}")
     st.metric("Solution Flow (cc/min)", round(st.session_state['solution_cc_per_min'], 2))
+    st.latex(r"\text{Solution Flow (cc/min)} = \frac{\text{Solution Flow (g/min)}}{\text{Solution Density}}")
     st.metric("Flow per Hole (cc/min)", round(st.session_state['solution_cc_per_min_per_hole'], 6))
+    st.latex(r"\text{Flow per Hole} = \frac{\text{Solution Flow (cc/min)}}{\text{Total Spinneret Holes}}")
 
 elif selected_section == "Spinning":
     st.header("Spinning Section (auto-calculated)")
@@ -247,9 +254,12 @@ elif selected_section == "Fiber Property":
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Filament Cross-section (cm²)", round(filament_crosssection, 8))
+        st.latex(r"\text{Filament Cross-section} = \pi \left(\frac{\text{Filament Diameter (cm)}}{2}\right)^2")
         st.metric("Calculated Linear Density (g/m)", round(calc_filament_g_per_m, 6))
+        st.latex(r"\text{Linear Density (g/m)} = \text{Cross-section} \times 100 \times \text{Density}")
     with col2:
         st.metric("dpf from geom.", round(calc_dpf, 2))
+        st.latex(r"\text{dpf} = \text{Linear Density (g/m)} \times 9000")
         st.metric("Design dpf", round(st.session_state['dpf'], 2))
 
 elif selected_section == "Extruder":
@@ -258,6 +268,7 @@ elif selected_section == "Extruder":
     st.metric("Operational Hours per Year", st.session_state['operational_hours'])
     st.metric("Electricity Price ($/kWh)", st.session_state['electricity_price'])
     st.metric("Extruder Utility Cost ($/yr)", round(st.session_state['extruder_utility_cost'], 2))
+    st.latex(r"\text{Utility Cost} = \text{Power (kW)} \times \text{Operational Hours} \times \text{Electricity Price}")
 
 elif selected_section == "Drying":
     st.header("Drying Oven Energy")
@@ -265,6 +276,7 @@ elif selected_section == "Drying":
     st.metric("Operational Hours per Year", st.session_state['operational_hours'])
     st.metric("Electricity Price ($/kWh)", st.session_state['electricity_price'])
     st.metric("Drying Utility Cost ($/yr)", round(st.session_state['drying_utility_cost'], 2))
+    st.latex(r"\text{Utility Cost} = \text{Power (kW)} \times \text{Operational Hours} \times \text{Electricity Price}")
 
 elif selected_section == "Raw Materials":
     st.header("Raw Materials & Ingredients (auto from universal values)")
@@ -273,11 +285,17 @@ elif selected_section == "Raw Materials":
     st.metric("Additives (kg/yr)", st.session_state['additives_kg_yr'])
     st.metric("Material Cost ($/kg)", st.session_state['material_cost_per_kg'])
     st.metric("Total Material Cost ($/yr)", round(total_materials_cost, 2))
+    st.latex(r"\text{Total Material Cost} = \text{UHMWPE Usage} \times \text{Material Cost} + \text{Solvent Usage} \times \text{Solvent Cost} + \text{Additive Usage} \times \text{Additive Cost}")
 
 elif selected_section == "Economic Summary":
     st.header("Profitability & Cost Summary (extruder and drying utility included)")
     st.metric("Annual Costs ($)", f"{total_annual_costs:,.2f}")
+    st.latex(r"\text{Annual Costs} = \text{Materials} + \text{Labor} + \text{Utility} + \text{Maintenance} + \text{Other} + \text{Depreciation}")
     st.metric("Annual Revenue ($)", f"{annual_revenue:,.2f}")
+    st.latex(r"\text{Annual Revenue} = \text{Annual Production (kg)} \times \text{Fiber Selling Price}")
     st.metric("Annual Profit ($)", f"{annual_profit:,.2f}")
+    st.latex(r"\text{Annual Profit} = \text{Revenue} - \text{Annual Costs}")
     st.metric("ROI (%)", f"{roi:.1f}")
+    st.latex(r"\text{ROI} = \frac{\text{Annual Profit}}{\text{Capex}} \times 100")
     st.metric("Payback Period (years)", f"{payback_period:.1f}")
+    st.latex(r"\text{Payback Period} = \frac{\text{Capex}}{\text{Annual Profit}}")
