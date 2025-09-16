@@ -135,16 +135,21 @@ pie_chart = alt.Chart(cost_data).mark_arc().encode(
     tooltip=['Category', 'Amount']
 ).properties(width=350, height=350, title='Annual Cost Distribution')
 
-colA, colB = st.columns([1.1, 1])
+colA, colB = st.columns([1.3, 1])
 with colA:
     st.image(
-        "Flow_chart.png",  # Your schematic
-        use_column_width=True,
+        "Flow_chart.png",
+        width=800,
         caption="Fiber Production Process Schematic"
     )
-
 with colB:
     st.altair_chart(pie_chart, use_container_width=True)
+    metric_style = """
+    <style>
+    .small-metric { font-size: 0.92rem; color: #495162; font-weight: 500; margin-bottom: 0.2em; letter-spacing: 0.01em;}
+    .small-value { font-size: 1.15rem; color: #034078; font-weight: 700; margin-bottom: 1em; }
+    </style>
+    """
     st.markdown(metric_style, unsafe_allow_html=True)
     mcol1, mcol2 = st.columns(2)
     with mcol1:
@@ -161,6 +166,7 @@ with colB:
                     f'<div class="small-value">{roi:.1f}</div>', unsafe_allow_html=True)
         st.markdown('<div class="small-metric">Break-even Price ($/kg)</div>'
                     f'<div class="small-value">{break_even:.2f}</div>', unsafe_allow_html=True)
+st.markdown("---")
 
 if selected_section == "Design Inputs":
     st.header("Universal Fiber Line Design Inputs")
