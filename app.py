@@ -60,7 +60,7 @@ pie_chart = alt.Chart(cost_data).mark_arc().encode(
     tooltip=['Category', 'Amount']
 ).properties(width=400, height=400, title='Annual Cost Distribution')
 
-colA, colB = st.columns([2, 1])
+colA, colB = st.columns([1.2, 1])
 with colA:
     st.image(
         "https://via.placeholder.com/800x400?text=Fiber+Production+Process+Schematic", 
