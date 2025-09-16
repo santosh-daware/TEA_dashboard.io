@@ -14,6 +14,11 @@ sections = [
 selected_section = st.radio("Navigate to Section:", sections, horizontal=True)
 st.markdown("---")
 
+if 'dpf' not in st.session_state:
+    st.session_state.dpf = 3.1
+if 'filament_g_per_m' not in st.session_state:
+    st.session_state.filament_g_per_m = st.session_state.dpf / 9000
+
 # ---- GLOBAL (SESSION) DEFAULTS FOR TOP VISUALS ----
 defaults = {
     "annual_production": 250,
@@ -113,22 +118,71 @@ st.markdown("---")
 if selected_section == "Production Capacity":
     st.header("Production Capacity")
     col1, col2 = st.columns(2)
+
+    # -- GLOBAL SYNC for dpf and filament g/m --
     with col1:
-        annual_production_ton = st.number_input("Annual Production (tons/year)", min_value=1, value=int(st.session_state.annual_production))
-        operational_days = st.number_input("Operational Days per Year", min_value=1, max_value=366, value=300)
-        dpf = st.number_input("Filament Linear Density (dpf)", min_value=0.01, value=3.1)
+        annual_production_ton = st.number_input(
+            "Annual Production (tons/year)",
+            min_value=1,
+            value=int(st.session_state.annual_production)
+        )
+        operational_days = st.number_input(
+            "Operational Days per Year",
+            min_value=1, max_value=366,
+            value=300
+        )
+        # Synchronized dpf input
+        new_dpf = st.number_input(
+            "Denier Per Filament (dpf)",
+            min_value=0.01,
+            value=float(st.session_state.dpf),
+            step=0.01,
+            key="prodcap_dpf"
+        )
+        if new_dpf != st.session_state.dpf:
+            st.session_state.dpf = new_dpf
+            st.session_state.filament_g_per_m = new_dpf / 9000
+
+        new_filament_g_per_m = st.number_input(
+            "Filament Linear Density (g/m)",
+            min_value=0.00001,
+            value=float(st.session_state.filament_g_per_m),
+            step=0.00001,
+            format="%.5f",
+            key="prodcap_gpm"
+        )
+        # If changed directly, sync dpf!
+        if abs(new_filament_g_per_m - st.session_state.filament_g_per_m) > 1e-8:
+            st.session_state.filament_g_per_m = new_filament_g_per_m
+            st.session_state.dpf = new_filament_g_per_m * 9000
+
     with col2:
-        take_up_speed = st.number_input("Take-up Speed (m/min)", min_value=1, value=100)
-        spinnerets = st.number_input("Number of Spinnerets", min_value=1, value=50)
-        holes_per_spinneret = st.number_input("Holes Per Spinneret", min_value=1, value=360)
+        take_up_speed = st.number_input(
+            "Take-up Speed (m/min)",
+            min_value=1,
+            value=100
+        )
+        spinnerets = st.number_input(
+            "Number of Spinnerets",
+            min_value=1,
+            value=50
+        )
+        holes_per_spinneret = st.number_input(
+            "Holes Per Spinneret",
+            min_value=1,
+            value=360
+        )
+
+    # --- CALCULATIONS (using session_state for dpf and filament g/m) ---
     operational_minutes = operational_days * 24 * 60
     annual_production_g = annual_production_ton * 1000 * 1000
     g_per_min = annual_production_g / operational_minutes
-    g_per_m = dpf / 9000
-    filament_m_per_min = g_per_min / g_per_m
-    n_filaments_needed = filament_m_per_min / take_up_speed
+    g_per_m = st.session_state.filament_g_per_m  # always use session_state value now!
+    filament_m_per_min = g_per_min / g_per_m if g_per_m else 0
+    n_filaments_needed = filament_m_per_min / take_up_speed if take_up_speed else 0
     n_spinneret_holes = spinnerets * holes_per_spinneret
     utilization = (n_filaments_needed / n_spinneret_holes) * 100 if n_spinneret_holes else 0
+
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Dry Fiber Output (g/min)", round(g_per_min, 2))
@@ -138,7 +192,10 @@ if selected_section == "Production Capacity":
         st.metric("Filaments Needed", int(n_filaments_needed))
         st.metric("Design Filaments (Spinneret Holes)", n_spinneret_holes)
         st.metric("Utilization (%)", round(utilization, 1))
+
+    # -- Make annual production available to other sections --
     st.session_state.annual_production = annual_production_ton
+
 
 elif selected_section == "Solution Preparation":
     st.header("Solution Preparation")
