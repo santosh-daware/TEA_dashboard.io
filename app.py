@@ -168,12 +168,14 @@ elif selected_section == "Extruder":
         screw_diameter = st.number_input("Screw Diameter (mm)", min_value=10, value=60, step=5)
         l_d_ratio = st.number_input("L/D Ratio", min_value=10, value=40, step=1)
         motor_power = st.number_input("Motor Power (kW)", min_value=1, value=200, step=10)
+        extruder_energy_cost = st.number_input("Extruder Energy/Utility Cost ($/yr)", min_value=0.0, value=float(st.session_state.utility_cost))
     with col2:
         max_rpm = st.number_input("Maximum RPM", min_value=10, value=300, step=10)
         throughput = st.number_input("Throughput (kg/h)", min_value=1, value=500, step=10)
         specific_energy = st.number_input("Specific Energy (kWh/kg)", min_value=0.1, value=0.15, step=0.01)
     st.metric("Screw Length (mm)", screw_diameter * l_d_ratio)
     st.metric("Energy Consumption (kW)", round(throughput * specific_energy, 1))
+    st.session_state.utility_cost = extruder_energy_cost
 
 elif selected_section == "Spinning":
     st.header("Spinning Calculations")
@@ -288,28 +290,109 @@ elif selected_section == "Fiber Property":
 
 elif selected_section == "Economic Summary":
     st.header("Profitability & Cost Summary")
+
+    # --- INPUTS ---
     col1, col2, col3 = st.columns(3)
     with col1:
         new_capex = st.number_input("Total Capex ($)", min_value=1.0, value=float(capex_total))
         new_labor = st.number_input("Labor Cost ($/yr)", min_value=0.0, value=float(labor_cost))
-        new_utility = st.number_input("Utility Cost ($/yr)", min_value=0.0, value=float(utility_cost))
+        process_costs = st.number_input("Other Processing Costs ($/yr)", min_value=0.0, value=112500.0)
     with col2:
         new_fiber_price = st.number_input("Fiber Selling Price ($/kg)", min_value=0.01, value=float(fiber_price), step=0.1)
         new_annual_prod = st.number_input("Annual Production (tons)", min_value=1.0, value=float(annual_production))
-        new_maintenance = st.number_input("Maintenance Cost ($/yr)", min_value=0.0, value=float(maintenance_cost))
+        extrusion_energy_cost = st.number_input("Extrusion/Delivery Power ($/yr)", min_value=0.0, value=39785.0)
     with col3:
+        solvent_heat_cost = st.number_input("Solvent Heat Cost ($/yr)", min_value=0.0, value=39785.0)
+        new_maintenance = st.number_input("Maintenance Cost ($/yr)", min_value=0.0, value=float(maintenance_cost))
         new_material_cost_kg = st.number_input("Material Cost ($/kg)", min_value=0.01, value=float(material_cost_per_kg), step=0.1)
         new_deprec_yrs = st.number_input("Depreciation Period (years)", min_value=1, value=int(depreciation_years))
         new_other_costs = st.number_input("Other Costs ($/yr)", min_value=0.0, value=float(other_costs))
+
+    # --- SESSION STATE UPDATES (for pie + annual summary) ---
     st.session_state.capex_total = new_capex
     st.session_state.labor_cost = new_labor
-    st.session_state.utility_cost = new_utility
     st.session_state.fiber_price = new_fiber_price
     st.session_state.annual_production = new_annual_prod
     st.session_state.maintenance_cost = new_maintenance
     st.session_state.material_cost_per_kg = new_material_cost_kg
     st.session_state.depreciation_years = new_deprec_yrs
     st.session_state.other_costs = new_other_costs
+
+    # --- PROCESS COSTS LOGIC (matching Excel logic) ---
+    total_process_costs = process_costs + extrusion_energy_cost + solvent_heat_cost
+    st.markdown("#### Process Cost Breakdown")
+    st.markdown(
+        f"- **Processing Costs:** ${process_costs:,.0f}/yr  \n"
+        f"- **Extrusion/Delivery Power:** ${extrusion_energy_cost:,.0f}/yr  \n"
+        f"- **Solvent Heat Cost:** ${solvent_heat_cost:,.0f}/yr  \n"
+        f"**Total Process Costs:** ${total_process_costs:,.0f}/yr"
+    )
+
+    # --- REST OF SUMMARY CALCULATION ---
+    material_cost = new_annual_prod * 1000 * new_material_cost_kg
+    depreciation_cost = new_capex / new_deprec_yrs
+    total_annual_costs = (
+        material_cost + new_labor + new_maintenance + new_other_costs +
+        total_process_costs + depreciation_cost
+    )
+    annual_revenue = new_annual_prod * 1000 * new_fiber_price
+    annual_profit = annual_revenue - total_annual_costs
+    roi = (annual_profit / new_capex * 100) if new_capex else 0
+    payback_period = new_capex / annual_profit if annual_profit > 0 else float('inf')
+    break_even = total_annual_costs / (new_annual_prod * 1000) if new_annual_prod > 0 else 0
+
+    # --- UPDATED PIE CHART (showing process costs separately) ---
+    cost_data = pd.DataFrame({
+        'Category': [
+            'Materials', 'Labor', 'Maintenance', 'Other Costs',
+            'Process Costs', 'Depreciation'],
+        'Amount': [
+            material_cost, new_labor, new_maintenance, new_other_costs,
+            total_process_costs, depreciation_cost]
+    })
+    pie_chart = alt.Chart(cost_data).mark_arc().encode(
+        theta=alt.Theta(field="Amount", type="quantitative"),
+        color=alt.Color(field="Category", type="nominal", scale=alt.Scale(scheme='category10')),
+        tooltip=['Category', 'Amount']
+    ).properties(width=330, height=330, title='Annual Cost Distribution')
+
+    st.altair_chart(pie_chart, use_container_width=True)
+    
+    # --- (optional) sharing key metrics in two columns ---
+    metric_style = """
+    <style>
+    .small-metric {
+        font-size: 0.95rem;
+        color: #495162;
+        font-weight: 500;
+        margin-bottom: 0.18em;
+        letter-spacing: 0.01em;
+    }
+    .small-value {
+        font-size: 1.17rem;
+        color: #034078;
+        font-weight: 700;
+        margin-bottom: 0.8em;
+    }
+    </style>
+    """
+    st.markdown(metric_style, unsafe_allow_html=True)
+    mcol1, mcol2 = st.columns(2)
+    with mcol1:
+        st.markdown('<div class="small-metric">Annual Revenue ($)</div>'
+                    f'<div class="small-value">{annual_revenue:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">Annual Profit ($)</div>'
+                    f'<div class="small-value">{annual_profit:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">Payback Period (years)</div>'
+                    f'<div class="small-value">{payback_period:.1f}</div>', unsafe_allow_html=True)
+    with mcol2:
+        st.markdown('<div class="small-metric">Annual Costs ($)</div>'
+                    f'<div class="small-value">{total_annual_costs:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">ROI (%)</div>'
+                    f'<div class="small-value">{roi:.1f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">Break-even Price ($/kg)</div>'
+                    f'<div class="small-value">{break_even:.2f}</div>', unsafe_allow_html=True)
+
     st.write("Scroll to the top to see updated schematic and cost breakdown pie chart!")
 
 st.caption("Fiber Production Techno-Economic Analysis Tool v1.0")
