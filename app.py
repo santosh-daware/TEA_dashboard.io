@@ -125,8 +125,9 @@ pie_chart = alt.Chart(cost_data).mark_arc().encode(
 colA, colB = st.columns([1.3, 1])
 with colA:
     st.image(
-        "https://via.placeholder.com/800x400?text=Fiber+Production+Process+Schematic",
-        width=400, caption="Fiber Production Process Schematic"
+        "Flow_chart.png",   # 
+        width=400,
+        caption="Fiber Production Process Schematic"
     )
 with colB:
     st.altair_chart(pie_chart, use_container_width=True)
