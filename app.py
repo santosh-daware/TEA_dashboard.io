@@ -327,23 +327,69 @@ elif selected_section == "Fiber Property":
     st.header("Fiber Property Calculations")
     col1, col2 = st.columns(2)
     with col1:
-        filament_diameter = st.number_input("Filament Diameter (μm)", min_value=1.0, value=22.08, step=0.01)
-        filament_density = st.number_input("Density (g/cc)", min_value=0.1, value=0.9, step=0.01)
+        filament_diameter = st.number_input(
+            "Filament Diameter (μm)",
+            min_value=1.0,
+            value=22.08,
+            step=0.01,
+            key="fiberprop_diam"
+        )
+        filament_density = st.number_input(
+            "Density (g/cc)",
+            min_value=0.1,
+            value=0.9,
+            step=0.01,
+            key="fiberprop_density"
+        )
+
+        # Synced dpf input (linked to session_state)
+        new_dpf = st.number_input(
+            "Denier Per Filament (dpf)",
+            min_value=0.01,
+            value=float(st.session_state.dpf),
+            step=0.01,
+            key="fiberprop_dpf"
+        )
+        if new_dpf != st.session_state.dpf:
+            st.session_state.dpf = new_dpf
+            st.session_state.filament_g_per_m = new_dpf / 9000
+
+        new_filament_g_per_m = st.number_input(
+            "Filament Linear Density (g/m)",
+            min_value=0.00001,
+            value=float(st.session_state.filament_g_per_m),
+            step=0.00001,
+            format="%.5f",
+            key="fiberprop_gpm"
+        )
+        if abs(new_filament_g_per_m - st.session_state.filament_g_per_m) > 1e-8:
+            st.session_state.filament_g_per_m = new_filament_g_per_m
+            st.session_state.dpf = new_filament_g_per_m * 9000
+
     with col2:
-        dpf = st.number_input("Denier Per Filament (dpf)", min_value=0.01, value=3.1, step=0.01)
-        tenacity = st.number_input("Tenacity (g/denier)", min_value=0.1, value=35.0, step=0.1)
+        tenacity = st.number_input(
+            "Tenacity (g/denier)",
+            min_value=0.1,
+            value=35.0,
+            step=0.1,
+            key="fiberprop_tenacity"
+        )
+
+    # CALCULATIONS (using synced session_state values)
     filament_diameter_cm = filament_diameter / 10000
-    filament_crosssection = 3.1416 * (filament_diameter_cm/2)**2
-    filament_g_per_m = filament_crosssection * 100 * filament_density
-    calculated_dpf = filament_g_per_m * 9000
-    tensile_strength = tenacity * dpf * 0.0882
+    filament_crosssection = 3.1416 * (filament_diameter_cm / 2) ** 2
+    calculated_filament_g_per_m = filament_crosssection * 100 * filament_density
+    calculated_dpf = calculated_filament_g_per_m * 9000
+    tensile_strength = tenacity * st.session_state.dpf * 0.0882
+
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Filament Cross-section (cm²)", round(filament_crosssection, 8))
-        st.metric("Calculated Linear Density (g/m)", round(filament_g_per_m, 6))
+        st.metric("Calculated Linear Density from geom. (g/m)", round(calculated_filament_g_per_m, 6))
     with col2:
-        st.metric("Calculated dpf", round(calculated_dpf, 2))
+        st.metric("Calculated dpf from geom.", round(calculated_dpf, 2))
         st.metric("Tensile Strength (N/tex)", round(tensile_strength, 1))
+
 
 
 elif selected_section == "Economic Summary":
