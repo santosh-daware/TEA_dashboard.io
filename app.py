@@ -58,7 +58,7 @@ pie_chart = alt.Chart(cost_data).mark_arc().encode(
     theta=alt.Theta(field="Amount", type="quantitative"),
     color=alt.Color(field="Category", type="nominal", scale=alt.Scale(scheme='category10')),
     tooltip=['Category', 'Amount']
-).properties(width=400, height=400, title='Annual Cost Distribution')
+).properties(width=200, height=200, title='Annual Cost Distribution')
 
 colA, colB = st.columns([1.2, 1])
 with colA:
