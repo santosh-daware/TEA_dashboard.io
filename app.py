@@ -126,7 +126,7 @@ colA, colB = st.columns([1.3, 1])
 with colA:
     st.image(
         "Flow_chart.png",   # 
-        width=400,
+        width=1000,
         caption="Fiber Production Process Schematic"
     )
 with colB:
