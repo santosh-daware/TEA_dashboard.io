@@ -162,8 +162,6 @@ with colB:
         st.markdown('<div class="small-metric">Break-even Price ($/kg)</div>'
                     f'<div class="small-value">{break_even:.2f}</div>', unsafe_allow_html=True)
 
-st.markdown("---")
-
 if selected_section == "Design Inputs":
     st.header("Universal Fiber Line Design Inputs")
     col1, col2 = st.columns(2)
