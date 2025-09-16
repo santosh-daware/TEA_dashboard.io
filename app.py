@@ -14,7 +14,6 @@ selected_section = st.radio("Navigate to Section:", sections, horizontal=True)
 st.markdown("---")
 
 # ------- UNIVERSAL INPUTS (design parameters) --------
-# Set defaults if not already set in session state
 default_params = {
     "annual_production": 250,
     "operational_days": 300,
@@ -34,36 +33,31 @@ default_params = {
     "uhmwpe_use_ton": 250,
     "maintenance_cost": 75000.0,
     "labor_cost": 200000.0,
-    "utility_cost": 50000.0,
     "other_costs": 50000.0,
     "capex_total": 915000.0,
     "depreciation_years": 10,
-    "fiber_price": 15.0
+    "fiber_price": 15.0,
+    "extruder_power_kw": 200,
+    "electricity_price": 0.15,
 }
-
 for k, v in default_params.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ----- CALCULATED/GLOBAL VALUES: Keep all below updated for all sections -----
-# All downstream sections should use these values ONLY!
+# ----- CALCULATED/GLOBAL VALUES: Keep below updated for all sections -----
 st.session_state['total_holes'] = int(st.session_state['spinnerets']) * int(st.session_state['holes_per_spinneret'])
-
 st.session_state['annual_production_g'] = st.session_state['annual_production'] * 1000 * 1000
 st.session_state['annual_production_kg'] = st.session_state['annual_production'] * 1000
-
 st.session_state['operational_minutes'] = st.session_state['operational_days'] * 24 * 60
+st.session_state['operational_hours'] = st.session_state['operational_days'] * 24
 
-# Dry fiber output (g/min)
 if st.session_state['operational_minutes'] > 0:
     st.session_state['dry_fiber_g_per_min'] = st.session_state['annual_production_g'] / st.session_state['operational_minutes']
 else:
     st.session_state['dry_fiber_g_per_min'] = 0
 
-# Filament linear density (g/m)
 st.session_state['filament_g_per_m'] = st.session_state['dpf'] / 9000
 
-# Solution flow, calculated from polymer fraction, solution density and dry fiber output
 if st.session_state['polymer_wt_frac'] > 0 and st.session_state['solution_density'] > 0:
     st.session_state['solution_g_per_min'] = st.session_state['dry_fiber_g_per_min'] / st.session_state['polymer_wt_frac']
     st.session_state['solution_cc_per_min'] = st.session_state['solution_g_per_min'] / st.session_state['solution_density']
@@ -71,11 +65,17 @@ else:
     st.session_state['solution_g_per_min'] = 0
     st.session_state['solution_cc_per_min'] = 0
 
-# Flow per hole
 if st.session_state['total_holes'] > 0:
     st.session_state['solution_cc_per_min_per_hole'] = st.session_state['solution_cc_per_min'] / st.session_state['total_holes']
 else:
     st.session_state['solution_cc_per_min_per_hole'] = 0
+
+# Extruder Utility Cost
+st.session_state['utility_cost'] = (
+    st.session_state['extruder_power_kw'] *
+    st.session_state['operational_hours'] *
+    st.session_state['electricity_price']
+)
 
 # ---------- TOP: Schematic + Pie Chart & Key Metrics (always on top) -------------
 annual_production = st.session_state.annual_production
@@ -109,7 +109,7 @@ break_even = total_annual_costs / (annual_production * 1000) if annual_productio
 cost_data = pd.DataFrame({
     'Category': [
         'UHMWPE', 'Solvent', 'Additives', 'Labor',
-        'Utilities', 'Maintenance', 'Other', 'Depreciation'
+        'Extruder Energy', 'Maintenance', 'Other', 'Depreciation'
     ],
     'Amount': [
         material_cost, solvent_cost, additive_cost,
@@ -125,7 +125,7 @@ pie_chart = alt.Chart(cost_data).mark_arc().encode(
 colA, colB = st.columns([1.3, 1])
 with colA:
     st.image(
-        "Flow_chart.png",   # 
+        "Flow_chart.png",
         width=800,
         caption="Fiber Production Process Schematic"
     )
@@ -172,6 +172,9 @@ if selected_section == "Design Inputs":
         st.session_state['filament_diameter_um'] = st.number_input(
             "Filament Diameter (μm)", min_value=1.0, value=float(st.session_state['filament_diameter_um']), step=0.01
         )
+        st.session_state['extruder_power_kw'] = st.number_input(
+            "Extruder Power (kW)", min_value=1.0, value=float(st.session_state['extruder_power_kw']), step=1.0
+        )
     with col2:
         st.session_state['filament_density'] = st.number_input(
             "Filament Density (g/cc)", min_value=0.1, value=float(st.session_state['filament_density']), step=0.01
@@ -190,6 +193,9 @@ if selected_section == "Design Inputs":
         )
         st.session_state['solution_density'] = st.number_input(
             "Solution Density (g/cc)", min_value=0.5, max_value=2.0, value=float(st.session_state['solution_density']), step=0.01
+        )
+        st.session_state['electricity_price'] = st.number_input(
+            "Electricity Price ($/kWh)", min_value=0.01, value=float(st.session_state['electricity_price']), step=0.01
         )
 
 # ----------- DOWNSTREAM SECTION EXAMPLES ----------------
@@ -234,7 +240,10 @@ elif selected_section == "Fiber Property":
 
 elif selected_section == "Extruder":
     st.header("Extruder Parameters (using design/central calculations)")
-    st.metric("Utility Cost ($/yr)", st.session_state['utility_cost'])
+    st.metric("Extruder Power (kW)", st.session_state['extruder_power_kw'])
+    st.metric("Operational Hours per Year", st.session_state['operational_hours'])
+    st.metric("Electricity Price ($/kWh)", st.session_state['electricity_price'])
+    st.metric("Extruder Utility Cost ($/yr)", round(st.session_state['utility_cost'], 2))
 
 elif selected_section == "Stretching & Solvent Removal":
     st.header("Stretching & Solvent Removal (show design-calculated flows)")
@@ -260,4 +269,4 @@ elif selected_section == "Economic Summary":
     st.metric("ROI (%)", f"{roi:.1f}")
     st.metric("Payback Period (years)", f"{payback_period:.1f}")
 
-st.caption("Streamlined, fully linked fiber techno-economic analysis tool. All parameters upstream, all calculations consistent and connected!")
+st.caption("Fiber techno-economic analysis tool: Extruder utility cost and all sections are fully linked to design, power, price inputs. No manual utility editing downstream!")
