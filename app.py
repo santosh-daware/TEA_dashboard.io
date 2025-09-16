@@ -68,13 +68,45 @@ with colA:
     )
 with colB:
     st.altair_chart(pie_chart, use_container_width=True)
-    st.metric("Annual Revenue ($)", f"{annual_revenue:,.2f}")
-    st.metric("Annual Costs ($)", f"{total_annual_costs:,.2f}")
-    st.metric("Annual Profit ($)", f"{annual_profit:,.2f}")
-    st.metric("ROI (%)", f"{roi:.1f}")
-    st.metric("Payback Period (years)", f"{payback_period:.1f}" if payback_period != float('inf') else "N/A")
-    st.metric("Break-even Price ($/kg)", f"{break_even:.2f}")
+    
+    # --- Custom two-column, reduced font metrics ---
+    metric_style = """
+    <style>
+    .small-metric {
+        font-size: 0.95rem;
+        color: #495162;
+        font-weight: 500;
+        margin-bottom: 0.18em;
+        letter-spacing: 0.01em;
+    }
+    .small-value {
+        font-size: 1.17rem;
+        color: #034078;
+        font-weight: 700;
+        margin-bottom: 0.8em;
+    }
+    </style>
+    """
+    st.markdown(metric_style, unsafe_allow_html=True)
+
+    mcol1, mcol2 = st.columns(2)
+    with mcol1:
+        st.markdown('<div class="small-metric">Annual Revenue ($)</div>'
+                    f'<div class="small-value">{annual_revenue:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">Annual Profit ($)</div>'
+                    f'<div class="small-value">{annual_profit:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">Payback Period (years)</div>'
+                    f'<div class="small-value">{payback_period:.1f}</div>', unsafe_allow_html=True)
+    with mcol2:
+        st.markdown('<div class="small-metric">Annual Costs ($)</div>'
+                    f'<div class="small-value">{total_annual_costs:,.2f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">ROI (%)</div>'
+                    f'<div class="small-value">{roi:.1f}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="small-metric">Break-even Price ($/kg)</div>'
+                    f'<div class="small-value">{break_even:.2f}</div>', unsafe_allow_html=True)
+
 st.markdown("---")
+
 
 # ---- MAIN APP SECTIONS ----
 
