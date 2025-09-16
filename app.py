@@ -4,7 +4,7 @@ import pandas as pd
 import altair as alt
 
 st.set_page_config(page_title="Fiber Techno-Economic Analysis", layout="wide")
-st.title("Fiber Techno-Economic Fiber Production Analysis")
+st.title("Techno-Economic Fiber Production Analysis")
 
 sections = [
     "Design Inputs", "Production Capacity", "Solution Preparation", "Spinning",
@@ -70,13 +70,12 @@ if st.session_state['total_holes'] > 0:
 else:
     st.session_state['solution_cc_per_min_per_hole'] = 0
 
-# -- Energy/utility costs only for extruder and drying:
+# -- Utility/Energy Costs: Only Extruder and Drying Oven --
 st.session_state['extruder_utility_cost'] = (
     st.session_state['extruder_power_kw'] *
     st.session_state['operational_hours'] *
     st.session_state['electricity_price']
 )
-
 st.session_state['drying_utility_cost'] = (
     st.session_state['drying_oven_power_kw'] *
     st.session_state['operational_hours'] *
@@ -168,7 +167,6 @@ with colB:
                     f'<div class="small-value">{break_even:.2f}</div>', unsafe_allow_html=True)
 st.markdown("---")
 
-# ========== UNIVERSAL INPUTS SECTION ==========
 if selected_section == "Design Inputs":
     st.header("Universal Fiber Line Design Inputs")
     col1, col2 = st.columns(2)
@@ -214,18 +212,67 @@ if selected_section == "Design Inputs":
             "Electricity Price ($/kWh)", min_value=0.01, value=float(st.session_state['electricity_price']), step=0.01
         )
 
+elif selected_section == "Production Capacity":
+    st.header("Production Capacity (calculated values only)")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Filament Linear Density (g/m)", round(st.session_state['filament_g_per_m'], 6), "from dpf")
+        st.metric("Dry Fiber Output (g/min)", round(st.session_state['dry_fiber_g_per_min'], 2))
+    with col2:
+        st.metric("Total Filament Output (m/min)", 
+                  int(st.session_state['dry_fiber_g_per_min'] / st.session_state['filament_g_per_m']) if st.session_state['filament_g_per_m'] else 0)
+        st.metric("Total Spinneret Holes", int(st.session_state['total_holes']))
+    st.metric("Take-up Speed (m/min)", st.session_state['take_up_speed'])
+
+elif selected_section == "Solution Preparation":
+    st.header("Solution Preparation (auto-calculated from design)")
+    st.metric("Solution Flow (g/min)", round(st.session_state['solution_g_per_min'], 2))
+    st.metric("Solution Flow (cc/min)", round(st.session_state['solution_cc_per_min'], 2))
+    st.metric("Flow per Hole (cc/min)", round(st.session_state['solution_cc_per_min_per_hole'], 6))
+
+elif selected_section == "Spinning":
+    st.header("Spinning Section (auto-calculated)")
+    st.metric("Total Spinneret Holes", st.session_state['total_holes'])
+    st.metric("Take-up Speed (m/min)", st.session_state['take_up_speed'])
+    st.metric("Solution Flow per Hole (cc/min/hole)", round(st.session_state['solution_cc_per_min_per_hole'], 6))
+
+elif selected_section == "Fiber Property":
+    st.header("Fiber Property Calculations (from design)")
+    filament_diameter_cm = st.session_state['filament_diameter_um'] / 10000
+    filament_density = st.session_state['filament_density']
+    filament_crosssection = math.pi * (filament_diameter_cm/2)**2
+    calc_filament_g_per_m = filament_crosssection * 100 * filament_density
+    calc_dpf = calc_filament_g_per_m * 9000
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Filament Cross-section (cm²)", round(filament_crosssection, 8))
+        st.metric("Calculated Linear Density (g/m)", round(calc_filament_g_per_m, 6))
+    with col2:
+        st.metric("dpf from geom.", round(calc_dpf, 2))
+        st.metric("Design dpf", round(st.session_state['dpf'], 2))
+
 elif selected_section == "Extruder":
     st.header("Extruder Parameters (energy-driven, auto-integrated)")
     st.metric("Extruder Power (kW)", st.session_state['extruder_power_kw'])
     st.metric("Operational Hours per Year", st.session_state['operational_hours'])
     st.metric("Electricity Price ($/kWh)", st.session_state['electricity_price'])
     st.metric("Extruder Utility Cost ($/yr)", round(st.session_state['extruder_utility_cost'], 2))
+
 elif selected_section == "Drying":
     st.header("Drying Oven Energy")
     st.metric("Drying Oven Power (kW)", st.session_state['drying_oven_power_kw'])
     st.metric("Operational Hours per Year", st.session_state['operational_hours'])
     st.metric("Electricity Price ($/kWh)", st.session_state['electricity_price'])
     st.metric("Drying Utility Cost ($/yr)", round(st.session_state['drying_utility_cost'], 2))
+
+elif selected_section == "Raw Materials":
+    st.header("Raw Materials & Ingredients (auto from universal values)")
+    st.metric("UHMWPE Usage (T/yr)", st.session_state['uhmwpe_use_ton'])
+    st.metric("Solvent Makeup (T/yr)", st.session_state['makeup_solvent_ton'])
+    st.metric("Additives (kg/yr)", st.session_state['additives_kg_yr'])
+    st.metric("Material Cost ($/kg)", st.session_state['material_cost_per_kg'])
+    st.metric("Total Material Cost ($/yr)", round(total_materials_cost, 2))
+
 elif selected_section == "Economic Summary":
     st.header("Profitability & Cost Summary (extruder and drying utility included)")
     st.metric("Annual Costs ($)", f"{total_annual_costs:,.2f}")
@@ -233,5 +280,5 @@ elif selected_section == "Economic Summary":
     st.metric("Annual Profit ($)", f"{annual_profit:,.2f}")
     st.metric("ROI (%)", f"{roi:.1f}")
     st.metric("Payback Period (years)", f"{payback_period:.1f}")
-# (other downstream sections as required)
+
 st.caption("Utility costs reflect only extruder and drying oven (physically calculated, used throughout).")
