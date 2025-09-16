@@ -286,26 +286,5 @@ elif selected_section == "Economic Summary":
 st.markdown("---")
 st.markdown(
 """
-#### Guidelines, Approach, and References
 
-- **All utility/energy costs are calculated from physical design (power, operational hours, electricity price) for extruder and drying oven—no manual double-entry or redundant editing.**
-- **Process data is linked across sections using Streamlit's session_state for full consistency.**
-- **Economic calculations integrate all major cost streams: raw materials, labor, utilities, maintenance, other O&M, and depreciation.**
-- **Pie chart and all metrics update automatically to reflect all input changes.**
-
-##### Key formulae:
-- Utility cost for a unit = `Power (kW) × Operational Hours × Electricity Price ($/kWh)`
-- Annual production in grams = `Annual production (ton) × 1e6`
-- Depreciation = `Capex / Depreciation Years`
-- Payback Period = `Capex / Annual Profit`
-
-##### Best practices:
-- Enter only top-level design/process values. All calculated fields and derived outputs are auto-managed for integrity.
-- Refer to process equipment datasheets and utility bills for realistic power values.
-- Adjust raw material and utility costs to match actual supply chain values in your geography.
-
-##### References
-- Textbooks: "Fiber Science and Technology" (C. A. Lawrence), "Polymer Processing" (Morton/Moore)
-- Example industrial systems: See process flows in DSM Dyneema, Celanese, and peer-reviewed techno-economic analysis papers.
-"""
 )
